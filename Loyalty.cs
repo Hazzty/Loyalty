@@ -186,6 +186,7 @@ namespace Oxide.Plugins
                 return "A loyalty reward for that permission already exists.";
 
             data.rewards.Add(new LoyaltyReward(rust.QuoteSafe(alias), rust.QuoteSafe(permission), Convert.ToUInt32(timereq, 10)));
+            Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
             return ("Successfully added: " + alias + " " + permission + " " + Convert.ToUInt32(timereq, 10));
         }
 
