@@ -106,31 +106,61 @@ namespace Oxide.Plugins
                 switch (args[0].ToLower())
                 {
                     case "add":
-                        SendReply(sender, add(args.Length, args[1], args[2], args[3]));
-                    break;
+                        if (args.Length != 4)
+                        {
+                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}");
+                            return;
+                        }
+                        SendReply(sender, add(args[1], args[2], args[3]));
+                        break;
 
                     case "remove":
-                        SendReply(sender, remove(args.Length, args[1]));
-                    break;
-                        
+                        if (args.Length != 2)
+                        {
+                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}");
+                            return;
+                        }
+                        SendReply(sender, remove(args[1]));
+                        break;
+
                     case "reset":
-                        SendReply(sender, reset(args.Length, args[1]));
+                        if (args.Length != 2)
+                        {
+                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty reset {string: username}");
+                            return;
+                        }
+                        SendReply(sender, reset(args[1]));
                         break;
 
                     case "set":
-                       
-                        SendReply(sender, set(args.Length, args[1], args[2]));
+                        if (args.Length != 3)
+                        {
+                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty set {string: username} {int: loyaltyPoints}");
+                            return;
+                        }
+                        SendReply(sender, set(args[1], args[2]));
                         break;
 
                     case "rewards":
-                        SendReply(sender, rewards(args.Length, sender));
+                        if (args.Length != 1)
+                        {
+                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty rewards");
+                            return;
+                        }
+              
+                        SendReply(sender, rewards(sender));
                         break;
 
                     case "help":
                         //todo
                         break;
                     case "lookup":
-                        SendReply(sender, lookup(args.Length, sender, args[1]));
+                        if (args.Length != 2)
+                        {
+                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty lookup {string: playername}");
+                            return;
+                        }
+                        SendReply(sender, lookup(args[1]));
                         break;
 
                     case "top":
@@ -143,10 +173,9 @@ namespace Oxide.Plugins
             }
         }
 
-        string add(int argCount, string alias, string permission, string timereq)
+        string add(string alias, string permission, string timereq)
         {
-            if (argCount != 4)
-                return ("Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}");
+            
 
             if (!Regex.IsMatch(timereq, "^\\d+$"))
                 return  "Invalid syntax. The fourth argument needs to be a positive integer.";
@@ -159,11 +188,8 @@ namespace Oxide.Plugins
             return ("Successfully added: " + alias + " " + permission + " " + Convert.ToUInt32(timereq, 10));
         }
 
-        string remove(int argCount, string permission)
+        string remove(string permission)
         {
-            if (argCount != 2)
-               return ("Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}");
-
             if (!rewardExists(rust.QuoteSafe(permission)))
                 return ("Loyalty reward with permission " + rust.QuoteSafe(permission) + " does not exist.");
 
@@ -176,11 +202,8 @@ namespace Oxide.Plugins
             return "Error if this happens something has gone terribly wrong. In remove function.";
         }
 
-        string reset(int argCount, string playerName)
+        string reset(string playerName)
         {
-            if (argCount != 2)
-                return ("Too few or too many arguments. \nUse /loyalty reset {string: username}");
-
             BasePlayer player = BasePlayer.Find(playerName);
             if (player == null)
                 return ("No player by the name " + rust.QuoteSafe(playerName) + "was found.");
@@ -194,11 +217,8 @@ namespace Oxide.Plugins
             return ("Player " + player.displayName + "'s loyalty point successfully reset.");
         }
 
-        string set(int argCount, string playerName, string newLoyalty)
+        string set(string playerName, string newLoyalty)
         {
-            if (argCount != 3)
-                return ("Too few or too many arguments. \nUse /loyalty set {string: username} {int: loyaltyPoints}");
-
             BasePlayer player = BasePlayer.Find(playerName);
             if (player == null)
                 return("No player by the name " + rust.QuoteSafe(playerName) + "was found.");
@@ -219,10 +239,9 @@ namespace Oxide.Plugins
 
         }
 
-        string rewards(int argCount, BasePlayer sender)
+        string rewards(BasePlayer sender)
         {
-            if (argCount != 1)
-                return("Too few or too many arguments. \nUse /loyalty rewards");
+           
             SendReply(sender, "List of all rewards: ");
 
             foreach (var reward in data.rewards)
@@ -231,10 +250,8 @@ namespace Oxide.Plugins
             return "End of list.";
         }
 
-        string lookup(int argCount, BasePlayer sender, string player)
+        string lookup(string player)
         {
-            if (argCount != 2)
-                return ("Too few or too many arguments. \nUse /loyalty lookup {string: playername}");
 
             Player lookUpPlayer = data.players.Values.FirstOrDefault(x => x.name.StartsWith(player, StringComparison.CurrentCultureIgnoreCase));
 
