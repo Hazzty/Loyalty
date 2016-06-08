@@ -34,6 +34,7 @@ namespace Oxide.Plugins
                 this.permission = permission;
                 this.requirement = requirement;
             }
+
         }
 
         public class Player
@@ -50,6 +51,17 @@ namespace Oxide.Plugins
                 this.name = name;
                 this.loyalty = loyalty;
             }
+            public override bool Equals(object obj)
+            {
+                Player pItem = obj as Player;
+                return pItem.GetHashCode() == this.GetHashCode();
+            }
+
+            public override int GetHashCode()
+            {
+                return (int)this.id;
+            }
+
         }
 
         Data data;
@@ -57,6 +69,16 @@ namespace Oxide.Plugins
         void Loaded()
         {
             data = Interface.Oxide.DataFileSystem.ReadObject<Data>("LoyaltyData");
+
+            permission.RegisterPermission("loyalty.loyalty", this);
+            permission.RegisterPermission("loyalty.add", this);
+            permission.RegisterPermission("loyalty.remove", this);
+            permission.RegisterPermission("loyalty.reset", this);
+            permission.RegisterPermission("loyalty.set", this);
+            permission.RegisterPermission("loyalty.lookup", this);
+            permission.RegisterPermission("loyalty.top", this);
+            permission.RegisterPermission("loyalty.rewards", this);
+            permission.RegisterPermission("loyalty.help", this);
 
             timer.Repeat(60f, 0, () =>
             {
@@ -77,28 +99,32 @@ namespace Oxide.Plugins
                                 rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(reward.permission));
                                 SendReply(player, "You've gained access to " + reward.alias);
                             }
-
                     }
-
                 }
                 Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
             });
-
         }
         void Unload()
         {
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
-
         }
 
         [ChatCommand("loyalty")]
         void loyalty(BasePlayer sender, string command, string[] args)
         {
+
             if (args.Length == 0)
-                if (data.players.ContainsKey(sender.userID))
-                    SendReply(sender, "Your current loyalty points: " + data.players[sender.userID].loyalty);
+                if (!permission.UserHasPermission(sender.UserIDString, "loyalty.loyalty"))
+                {
+                    if (data.players.ContainsKey(sender.userID))
+                    {
+                        SendReply(sender, "Your current loyalty points: " + data.players[sender.userID].loyalty);
+                    }
+                    else
+                        SendReply(sender, "You have not yet earned any loyalty point. Check again later!");
+                }
                 else
-                    SendReply(sender, "You have not yet earned any loyalty point. Check again later!");
+                    SendReply(sender, "You do not have access to that command."); 
 
 
             if (args.Length > 0)
@@ -106,6 +132,12 @@ namespace Oxide.Plugins
                 switch (args[0].ToLower())
                 {
                     case "add":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.add"))
+                        {
+                            SendReply(sender, "You do not have access to that command.");
+                            return;
+                        }
+
                         if (args.Length != 4)
                         {
                             SendReply(sender, "Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}");
@@ -115,6 +147,11 @@ namespace Oxide.Plugins
                         break;
 
                     case "remove":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.remove"))
+                        {
+                            SendReply(sender, "You do not have access to that command.");
+                            return;
+                        }
                         if (args.Length != 2)
                         {
                             SendReply(sender, "Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}");
@@ -124,6 +161,11 @@ namespace Oxide.Plugins
                         break;
 
                     case "reset":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.reset"))
+                        {
+                            SendReply(sender, "You do not have access to that command.");
+                            return;
+                        }
                         if (args.Length != 2)
                         {
                             SendReply(sender, "Too few or too many arguments. \nUse /loyalty reset {string: username}");
@@ -133,6 +175,11 @@ namespace Oxide.Plugins
                         break;
 
                     case "set":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.set"))
+                        {
+                            SendReply(sender, "You do not have access to that command.");
+                            return;
+                        }
                         if (args.Length != 3)
                         {
                             SendReply(sender, "Too few or too many arguments. \nUse /loyalty set {string: username} {int: loyaltyPoints}");
@@ -142,6 +189,11 @@ namespace Oxide.Plugins
                         break;
 
                     case "rewards":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewards"))
+                        {
+                            SendReply(sender, "You do not have access to that command.");
+                            return;
+                        }
                         if (args.Length != 1)
                         {
                             SendReply(sender, "Too few or too many arguments. \nUse /loyalty rewards");
@@ -155,6 +207,11 @@ namespace Oxide.Plugins
                         //todo
                         break;
                     case "lookup":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.lookup"))
+                        {
+                            SendReply(sender, "You do not have access to that command.");
+                            return;
+                        }
                         if (args.Length != 2)
                         {
                             SendReply(sender, "Too few or too many arguments. \nUse /loyalty lookup {string: playername}");
@@ -164,6 +221,11 @@ namespace Oxide.Plugins
                         break;
 
                     case "top":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.top"))
+                        {
+                            SendReply(sender, "You do not have access to that command.");
+                            return;
+                        }
                         top(sender);
                         break;
                     default:
@@ -234,6 +296,11 @@ namespace Oxide.Plugins
                     rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
                     SendReply(player, "You've gained access to " + reward.alias);
                 }
+                if(data.players[player.userID].loyalty < reward.requirement)
+                {
+                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
+                    SendReply(player, "You've lost access to " + reward.alias);
+                }
             }
             return ("Player " + player.displayName + "'s loyalty point was successfully set to " + Convert.ToUInt32(newLoyalty, 10));
 
@@ -263,7 +330,7 @@ namespace Oxide.Plugins
 
         void top(BasePlayer sender)
         {
-            var topList = from entry in data.players orderby entry.Value ascending select entry;
+            var topList = (from entry in data.players orderby entry.Value.loyalty descending select entry).Take(10).ToDictionary(pair => pair.Key, pair => pair.Value);
             int counter = 0;
 
             SendReply(sender, "Top 10 most loyal players");
@@ -274,7 +341,8 @@ namespace Oxide.Plugins
                 if (counter == 10)
                     break;
             }
-
+            SendReply(sender, "End of list.");
+            
         }
 
         bool rewardExists(string permission)
