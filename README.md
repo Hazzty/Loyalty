@@ -23,4 +23,4 @@ The config file for the plugin is located in Oxide's default config file folder(
 * <b>"serverName": "DefaultServer"</b> - Change "DefaultServer" to whatever server name you want displayed when the server sends messages.
 
 <h2>Lang</h2>
-The lang file is located in oxide's default lang folder. It contains all the strings that are used in the plugin, these can be customized but don't be surprised if you mess something up by fiddling with them.
+The lang file is located in oxide's default lang folder(serverroot/server/serveridentity/oxide/lang). It contains all the strings that are used in the plugin, these can be customized but don't be surprised if you mess something up by fiddling with them.
