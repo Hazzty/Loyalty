@@ -4,6 +4,8 @@ Loyalty is an Oxide plugin for Rust that allows server owners to grant players p
 
  <h2>Information</h2>
 First of all this plugin is under development and not recommended for use on a live server environment. Also the plugin is under development and not recommended for use on a live server environment. 
+
+If you find any bugs or have any suggestions for the plugin make sure you file an issue or let me know in any other way.
  
 <h2>Commands</h2>
 * <b>/loyalty</b> - return your current loyalty points
