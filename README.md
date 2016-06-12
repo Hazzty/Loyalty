@@ -1,3 +1,4 @@
+<h1>Loyalty</h1>
 Loyalty is an Oxide plugin for Rust that allows server owners to grant players permissions depending on how long they've spent on the server.
  
-<h1>qawe</h1>
+
