@@ -1,5 +1,9 @@
+<h1>This plugin is under development and not recommended for use on a live server environment!</h1>
 <h1>Loyalty</h1>
 Loyalty is an Oxide plugin for Rust that allows server owners to grant players permissions depending on how long they've spent on the server.
+
+ <h2>Information</h2>
+First of all this plugin is under development and not recommended for use on a live server environment. Also the plugin is under development and not recommended for use on a live server environment. 
  
 <h2>Commands</h2>
 * <b>/loyalty</b> - return your current loyalty points
