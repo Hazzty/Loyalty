@@ -2,6 +2,9 @@
 <h1>Loyalty</h1>
 Loyalty is an Oxide plugin for Rust that allows server owners to grant players permissions depending on how long they've spent on the server.
 
+<h2>Loyalty points</h2>
+Loyalty points are a way to measure how long a player has spent on the server. Every minute the plugin checks which players are online. Everyone that is online recieves 1 loyalty point. When a player reaches a loyalty point requirement for a given permission this player is granted that permission. Simple stuff!
+
  <h2>Information</h2>
 First of all this plugin is under development and not recommended for use on a live server environment. Also the plugin is under development and not recommended for use on a live server environment. 
 
