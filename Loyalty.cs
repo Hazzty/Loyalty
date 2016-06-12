@@ -34,7 +34,6 @@ namespace Oxide.Plugins
                 this.permission = permission;
                 this.requirement = requirement;
             }
-
         }
 
         public class Player
@@ -69,7 +68,6 @@ namespace Oxide.Plugins
         void Loaded()
         {
             data = Interface.Oxide.DataFileSystem.ReadObject<Data>("LoyaltyData");
-
             permission.RegisterPermission("loyalty.loyalty", this);
             permission.RegisterPermission("loyalty.add", this);
             permission.RegisterPermission("loyalty.remove", this);
@@ -80,52 +78,98 @@ namespace Oxide.Plugins
             permission.RegisterPermission("loyalty.rewards", this);
             permission.RegisterPermission("loyalty.help", this);
 
+            lang.RegisterMessages(new Dictionary<string, string>
+            {
+                ["accessDenied"] = "<color=red>You do not have access to that command.</color>",
+                ["noLoyalty"] = "<color=red>You have not yet earned any loyalty point. Check again later!</color>",
+                ["loyaltyCurrent"] = "You have accumulated a total of<color=yellow> {0} </color>loyalty points by playing on <color=yellow>" + Config["serverName"].ToString() + "</color>",
+                ["accessGained"] = "Congratulations by spending<color=yellow> {0} minutes</color> on <color=yellow>" + Config["serverName"].ToString() + " </color>you have gained access to the command  <color=grey>{1}</color>. Thank you for playing!",
+                ["accessLost"] = "<color=red>You have lost access to <color=yellow>{0}</color> due to an administrator changing your loyalty.</color>",
+                ["syntaxAdd"] = "<color=red>Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}</color>",
+                ["syntaxRemove"] = "<color=red>Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}</color>",
+                ["syntaxReset"] = "<color=red>Too few or too many arguments. \nUse /loyalty reset {string: username}</color>",
+                ["syntaxSet"] = "<color=red>Too few or too many arguments. \nUse /loyalty set {string: username} {int: loyaltyPoints}</color>",
+                ["syntaxRewards"] = "<color=red>Too few or too many arguments. \nUse /loyalty rewards</color>",
+                ["syntaxHelp"] = "<color=red>Too few or too many arguments. \nUse /loyalty help</color>",
+                ["syntaxLookup"] = "<color=red>Too few or too many arguments. \nUse /loyalty lookup {string: playername}</color>",
+                ["syntaxTop"] = "<color=red>Too few or too many arguments. \nUse /loyalty top</color>",
+                ["noCommand"] = "<color=red>There's no command by that name.</color>",
+                ["messageStyling"] = "{0}",
+                ["senderStyling"] = "<color=lime>{0}</color>",
+                ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/rewards/top/lookup</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
+                ["syntaxNotInt"] = "Invalid syntax. Loyalty requirement needs to be a positive integer.",
+                ["rewardExists"] = "A reward for the permission {0} already exists.",
+                ["rewardNoExist"] = "No reward for the permission ",
+                ["setSuccess"] = "Player {0}'s loyalty points were successfully set to {1}.",
+                ["resetSuccess"] = "Player {0}'s loyalty points were successfully reset.",
+                ["addSuccess"] = "Successfully added: {0} {1} {2}",
+                ["topEntry"] = "{0}. <color=lime>{1}</color> - {2}",
+                ["fatalError"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
+                ["playerNotFound"] = "No player by the name {0} was found.", 
+                ["rewardRemoved"] = "Loyalty reward {0} was successfully removed.",
+                ["rewardEntry"] = "Alias: {0} Perm: {1} Req: {2}",
+                ["lookupEntry"] = "Player <color=lime>{0}</color> has accumulated a total of {1} loyalty points.",
+
+        }, this); 
+
             timer.Repeat(60f, 0, () =>
             {
-                foreach (var player in BasePlayer.activePlayerList)
+                foreach (var player in BasePlayer.activePlayerList) 
                 {
 
                     if (!data.players.ContainsKey(player.userID))
                         data.players.Add(player.userID, new Player(player.userID, player.displayName, 1));
                     else
                     {
-                        Player p;
-                        data.players.TryGetValue(player.userID, out p);
-                        data.players[player.userID].loyalty = p.loyalty + 1;
-
+                        data.players[player.userID].loyalty += 1;
                         foreach (var reward in data.rewards)
-                            if (p.loyalty + 1 == reward.requirement)
+                            if (data.players[player.userID].loyalty == reward.requirement)
                             {
                                 rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(reward.permission));
-                                SendReply(player, "You've gained access to " + reward.alias);
+                                SendMessage(player, "accessGranted", reward.requirement, reward.alias);
                             }
                     }
+                    Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
                 }
-                Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
             });
         }
+
+        protected override void LoadDefaultConfig()
+        {
+
+            Config["serverName"] = "DefaultServer";
+            Config["serverID"] = "76561197981174278";
+            SaveConfig();
+        }
+
         void Unload()
         {
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
         }
 
+        void OnPlayerInit(BasePlayer player)
+        {
+            if (!data.players.ContainsKey(player.userID))
+            {
+                data.players.Add(player.userID, new Player(player.userID, player.displayName, 0));
+                Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
+            }
+        }
+
+
         [ChatCommand("loyalty")]
         void loyalty(BasePlayer sender, string command, string[] args)
         {
-
-            if (args.Length == 0)
-                if (!permission.UserHasPermission(sender.UserIDString, "loyalty.loyalty"))
+            if (args.Length <= 0)
+                if (permission.UserHasPermission(sender.UserIDString, "loyalty.loyalty"))
                 {
                     if (data.players.ContainsKey(sender.userID))
-                    {
-                        SendReply(sender, "Your current loyalty points: " + data.players[sender.userID].loyalty);
-                    }
+                        SendMessage(sender, "loyaltyCurrent", data.players[sender.userID].loyalty);
                     else
-                        SendReply(sender, "You have not yet earned any loyalty point. Check again later!");
+                        SendMessage(sender, "noLoyalty");
                 }
                 else
-                    SendReply(sender, "You do not have access to that command."); 
-
+                    SendMessage(sender, "accessDenied");
 
             if (args.Length > 0)
             {
@@ -134,102 +178,118 @@ namespace Oxide.Plugins
                     case "add":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.add"))
                         {
-                            SendReply(sender, "You do not have access to that command.");
+                            SendMessage(sender, "accessDenied");
                             return;
                         }
-
                         if (args.Length != 4)
                         {
-                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}");
+                            SendMessage(sender, "syntaxAdd");
                             return;
                         }
-                        SendReply(sender, add(args[1], args[2], args[3]));
+                        SendMessage(sender, add(args[1], args[2], args[3]));
                         break;
 
                     case "remove":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.remove"))
                         {
-                            SendReply(sender, "You do not have access to that command.");
+                            SendMessage(sender, "accessDenied");
                             return;
                         }
                         if (args.Length != 2)
                         {
-                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}");
+                            SendMessage(sender, "syntaxRemove");
                             return;
                         }
-                        SendReply(sender, remove(args[1]));
+                        SendMessage(sender, remove(args[1]));
                         break;
 
                     case "reset":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.reset"))
                         {
-                            SendReply(sender, "You do not have access to that command.");
+                            SendMessage(sender, "accessDenied");
                             return;
                         }
                         if (args.Length != 2)
                         {
-                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty reset {string: username}");
+                            SendMessage(sender, "syntaxReset");
                             return;
                         }
-                        SendReply(sender, reset(args[1]));
+                        SendMessage(sender, reset(args[1]));
                         break;
 
                     case "set":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.set"))
                         {
-                            SendReply(sender, "You do not have access to that command.");
+                            SendMessage(sender, "accessDenied");
                             return;
                         }
                         if (args.Length != 3)
                         {
-                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty set {string: username} {int: loyaltyPoints}");
+                            SendMessage(sender, "syntaxSet");
                             return;
                         }
-                        SendReply(sender, set(args[1], args[2]));
+                        SendMessage(sender, set(args[1], args[2]));
                         break;
 
                     case "rewards":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewards"))
                         {
-                            SendReply(sender, "You do not have access to that command.");
+                            SendMessage(sender, "accessDenied");
                             return;
                         }
                         if (args.Length != 1)
                         {
-                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty rewards");
+                            SendMessage(sender, "syntaxRewards");
                             return;
                         }
               
-                        SendReply(sender, rewards(sender));
+                        SendMessage(sender, rewards(sender));
                         break;
 
                     case "help":
-                        //todo
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.help"))
+                        {
+                            SendMessage(sender, "accessDenied");
+                            return;
+                        }
+                        if (args.Length != 1)
+                        {
+                            SendMessage(sender, "syntaxHelp");
+                            return;
+                        }
+                        SendMessage(sender, "help");
                         break;
+
                     case "lookup":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.lookup"))
                         {
-                            SendReply(sender, "You do not have access to that command.");
+                            SendMessage(sender, "accessDenied");
                             return;
                         }
                         if (args.Length != 2)
                         {
-                            SendReply(sender, "Too few or too many arguments. \nUse /loyalty lookup {string: playername}");
+                            SendMessage(sender, "syntaxLookup");
                             return;
                         }
-                        SendReply(sender, lookup(args[1]));
+                        SendMessage(sender, lookup(args[1]));
                         break;
 
                     case "top":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.top"))
                         {
-                            SendReply(sender, "You do not have access to that command.");
+                            SendMessage(sender, "accessDenied");
+                            return;
+                        }
+                        if (args.Length != 1)
+                        {
+                            SendMessage(sender, "syntaxTop");
                             return;
                         }
                         top(sender);
                         break;
+
                     default:
-                        SendReply(sender, "There's no secondary argument with that identifier.");
+                        SendMessage(sender, "There's no secondary argument with that identifier.");
                         break;
                 };
             }
@@ -237,121 +297,135 @@ namespace Oxide.Plugins
 
         string add(string alias, string permission, string timereq)
         {
-            
-
             if (!Regex.IsMatch(timereq, "^\\d+$"))
-                return  "Invalid syntax. The fourth argument needs to be a positive integer.";
+                return "syntaxNotInt";
 
             if (rewardExists(rust.QuoteSafe(permission)))
-                return "A loyalty reward for that permission already exists.";
+                return FormatMessage("rewardExists", permission);
 
             data.rewards.Add(new LoyaltyReward(rust.QuoteSafe(alias), rust.QuoteSafe(permission), Convert.ToUInt32(timereq, 10)));
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
-            return ("Successfully added: " + alias + " " + permission + " " + Convert.ToUInt32(timereq, 10));
+
+            return FormatMessage("addSuccess", alias, permission, Convert.ToUInt32(timereq, 10));
         }
 
         string remove(string permission)
         {
             if (!rewardExists(rust.QuoteSafe(permission)))
-                return ("Loyalty reward with permission " + rust.QuoteSafe(permission) + " does not exist.");
-
+                return FormatMessage("rewardNoExist", permission);
             foreach (LoyaltyReward reward in data.rewards)
                 if (reward.permission == rust.QuoteSafe(permission))
                 {
-                    data.rewards.Remove(reward);
-                    return ("Loyalty reward " + rust.QuoteSafe(permission) + " was successfully removed.");
+                   data.rewards.Remove(reward);
+                   return FormatMessage("rewardRemoved", permission);
                 }
-            return "Error if this happens something has gone terribly wrong. In remove function.";
+            return "fatalError";
         }
 
         string reset(string playerName)
         {
-            BasePlayer player = BasePlayer.Find(playerName);
+            Player player = data.players.Values.FirstOrDefault(x => x.name.StartsWith(playerName, StringComparison.CurrentCultureIgnoreCase));
             if (player == null)
-                return ("No player by the name " + rust.QuoteSafe(playerName) + "was found.");
+                return FormatMessage("playerNotFound", playerName);
 
-            data.players[player.userID].loyalty = 0;
+            data.players[player.id].loyalty = 0;
             foreach (var reward in data.rewards)
             {
-                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
-                    SendReply(player, "You've lost access to " + reward.alias);
+                rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission);
+                SendMessage(BasePlayer.FindByID(player.id), FormatMessage("accessLost", reward));
             }
-            return ("Player " + player.displayName + "'s loyalty point successfully reset.");
+            return FormatMessage("resetSuccess", player.name);
         }
 
         string set(string playerName, string newLoyalty)
         {
-            BasePlayer player = BasePlayer.Find(playerName);
+            Player player = data.players.Values.FirstOrDefault(x => x.name.StartsWith(playerName, StringComparison.CurrentCultureIgnoreCase));
             if (player == null)
-                return("No player by the name " + rust.QuoteSafe(playerName) + "was found.");
+                return FormatMessage("playerNotFound", playerName);
             if (!Regex.IsMatch(newLoyalty, "^\\d+$"))
-                return("Invalid syntax. The fourth argument needs to be a positive integer.");
+                return("Invalid syntax. The third argument needs to be a positive integer.");
 
-            data.players[player.userID].loyalty = Convert.ToUInt32(newLoyalty, 10);
+            data.players[player.id].loyalty = Convert.ToUInt32(newLoyalty, 10);
 
             foreach (var reward in data.rewards)
             {
-                if (data.players[player.userID].loyalty >= reward.requirement)
+                if (data.players[player.id].loyalty >= reward.requirement)
                 {
-                    rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
-                    SendReply(player, "You've gained access to " + reward.alias);
+                    rust.RunServerCommand("grant user " + rust.QuoteSafe(player.name) + " " + reward.permission);
+                    SendMessage(BasePlayer.FindByID(player.id), FormatMessage("accessGained", reward.requirement, reward.alias));
                 }
-                if(data.players[player.userID].loyalty < reward.requirement)
+                if(data.players[player.id].loyalty < reward.requirement)
                 {
-                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
-                    SendReply(player, "You've lost access to " + reward.alias);
+                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission);
+                    SendMessage(BasePlayer.FindByID(player.id), FormatMessage("accessLost", reward.alias));
                 }
             }
-            return ("Player " + player.displayName + "'s loyalty point was successfully set to " + Convert.ToUInt32(newLoyalty, 10));
+            return FormatMessage("setSuccess", player.name, Convert.ToUInt32(newLoyalty, 10));
 
         }
 
-        string rewards(BasePlayer sender)
+        string rewards(BasePlayer sender) //Todo make less useless
         {
-           
-            SendReply(sender, "List of all rewards: ");
-
             foreach (var reward in data.rewards)
-                SendReply(sender, "Alias: " + reward.alias + " Perm: " + reward.permission + " Req: " + reward.requirement);
+                SendMessage(sender, "Alias: " + reward.alias + " Perm: " + reward.permission + " Req: " + reward.requirement);
 
-            return "End of list.";
+            return "End of reward list"; 
         }
 
         string lookup(string player)
         {
 
             Player lookUpPlayer = data.players.Values.FirstOrDefault(x => x.name.StartsWith(player, StringComparison.CurrentCultureIgnoreCase));
-
             if (lookUpPlayer != null)
-               return (rust.QuoteSafe(lookUpPlayer.name) + " has " + data.players[lookUpPlayer.id].loyalty + " loyality points.");
+                return FormatMessage("lookupEntry", lookUpPlayer.name, data.players[lookUpPlayer.id].loyalty);
             else
-                return("No player by the name " + rust.QuoteSafe(player) + " was found.");
+                return FormatMessage("playerNotFound", player);
         }
 
         void top(BasePlayer sender)
         {
             var topList = (from entry in data.players orderby entry.Value.loyalty descending select entry).Take(10).ToDictionary(pair => pair.Key, pair => pair.Value);
             int counter = 0;
-
-            SendReply(sender, "Top 10 most loyal players");
+            SendMessage(sender, "Top 10 most loyal players");
 
             foreach (var entry in topList)
-            {
-                SendReply(sender, ++counter + ". " + entry.Value.name + " - " + entry.Value.loyalty);
-                if (counter == 10)
-                    break;
-            }
-            SendReply(sender, "End of list.");
-            
+               SendMessage(sender, "topEntry", ++counter, entry.Value.name, entry.Value.loyalty);
+        }
+        
+        void SendMessage(BasePlayer receiver, string messageID, params object[] args)
+        {
+            rust.SendChatMessage(receiver, "",
+               String.Format(lang.GetMessage("messageStyling", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))),
+               Config["serverID"].ToString());
+        }
+
+        void SendMessageAsServer(BasePlayer receiver, string messageID, params object[] args)
+        {
+            rust.SendChatMessage(receiver,
+               String.Format(lang.GetMessage("senderStyling", this), Config["serverName"]),
+                String.Format(lang.GetMessage("messageStyling", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))), 
+                Config["serverID"].ToString());
+        }
+
+        void SendMessageFromID(BasePlayer receiver, string messageID, ulong senderID, params object[] args)
+        {
+            rust.SendChatMessage(receiver, 
+                String.Format(lang.GetMessage("senderStyling", this), BasePlayer.FindByID(senderID).displayName),
+                String.Format(lang.GetMessage("messageStyling", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))),
+                Convert.ToString(senderID));
+        }
+
+        string FormatMessage(string messageID, params object[] args)
+        {
+            return String.Format(lang.GetMessage(messageID, this), args);
         }
 
         bool rewardExists(string permission)
         {
             foreach (LoyaltyReward reward in data.rewards)
-            {
                 if (reward.permission == permission)
                     return true;
-            }
+
             return false;
         }
     }
