@@ -11,4 +11,7 @@ Loyalty is an Oxide plugin for Rust that allows server owners to grant players p
 * <b>/loyalty lookup {string: playername}</b> - Lookup the loyalty points of a player
 * <b>/loyalty help</b> - Shows basic information about the plugin
 
-
+<h2>Config</h2>
+The config file for the plugin is located in Oxide's default config file folder(serverroot/server/serveridentity/oxide/config)
+* <b>"serverID": "0"</b> - Change "0" to the steam id of a steam user whose profile picture you want the plugin to use when sending messages.
+* <b>"serverName": "DefaultServer"</b> - Change "DefaultServer" to whatever server name you want displayed when the server sends messages.
