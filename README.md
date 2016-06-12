@@ -21,3 +21,6 @@ If you find any bugs or have any suggestions for the plugin make sure you file a
 The config file for the plugin is located in Oxide's default config file folder(serverroot/server/serveridentity/oxide/config)
 * <b>"serverID": "0"</b> - Change "0" to the steam id of a steam user whose profile picture you want the plugin to use when sending messages.
 * <b>"serverName": "DefaultServer"</b> - Change "DefaultServer" to whatever server name you want displayed when the server sends messages.
+
+<h2>Lang</h2>
+The lang file is located in oxide's default lang folder. It contains all the strings that are used in the plugin, these can be customized but don't be surprised if you mess something up by fiddling with them.
