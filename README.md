@@ -17,6 +17,16 @@ If you find any bugs or have any suggestions for the plugin make sure you file a
 * <b>/loyalty lookup {string: playername}</b> - Lookup the loyalty points of a player
 * <b>/loyalty help</b> - Shows basic information about the plugin
 
+<h2>Permissions</h2>
+* <b>loyalty.loyalty</b> - Allows the use of /loyalty
+* <b>loyalty.add</b> - /loyalty add
+* <b>loyalty.remove</b> - /loyalty remove
+* <b>loyalty.set</b> - /loyalty set
+* <b>loyalty.reset</b> - /loyalty reset
+* <b>loyalty.top</b> - /loyalty top
+* <b>loyalty.lookup</b> - /loyalty lookup
+* <b>loyalty.help</b> - /loyalty help
+
 <h2>Config</h2>
 The config file for the plugin is located in Oxide's default config file folder(serverroot/server/serveridentity/oxide/config)
 * <b>"serverID": "0"</b> - Change "0" to the steam id of a steam user whose profile picture you want the plugin to use when sending messages.
