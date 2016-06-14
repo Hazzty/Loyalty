@@ -380,9 +380,9 @@ namespace Oxide.Plugins
         void SendMessageFromID(BasePlayer receiver, string messageID, ulong senderID, params object[] args)
         {
             rust.SendChatMessage(receiver, 
-                String.Format(lang.GetMessage("senderStyling", this), "",
+                String.Format(lang.GetMessage("senderStyling", this), ""),
                 String.Format(lang.GetMessage("messageStyling", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))),
-                Convert.ToString(senderID)));
+                Convert.ToString(senderID));
         }
 
         string FormatMessage(string messageID, params object[] args)
