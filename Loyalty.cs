@@ -12,6 +12,7 @@ namespace Oxide.Plugins
     class Loyalty : RustPlugin
     {
 
+        #region Classes
         class Data
         {
             public Dictionary<ulong, Player> players = new Dictionary<ulong, Player>();
@@ -62,9 +63,11 @@ namespace Oxide.Plugins
             }
 
         }
+        #endregion Classes
 
         Data data;
 
+        #region Hooks
         void Init()
 		{
             RegisterMessages();
@@ -95,6 +98,11 @@ namespace Oxide.Plugins
             });
         }
 
+        void Unload()
+        {
+            Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
+        }
+
         protected override void LoadDefaultConfig()
         {
             PrintWarning("Creating a new configuration file for Loyalty");
@@ -102,11 +110,6 @@ namespace Oxide.Plugins
             Config["serverName"] = "DefaultServer";
             Config["serverID"] = "76561197981174278";
             SaveConfig();
-        }
-
-        void Unload()
-        {
-            Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
         }
 
         void OnPlayerInit(BasePlayer player)
@@ -117,8 +120,9 @@ namespace Oxide.Plugins
                 Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
             }
         }
+        #endregion Hooks
 
-
+        #region Main
         [ChatCommand("loyalty")]
         void loyalty(BasePlayer sender, string command, string[] args)
         {
@@ -256,7 +260,9 @@ namespace Oxide.Plugins
                 };
             }
         }
+        #endregion Main
 
+        #region Subcommands
         string add(string alias, string permission, string timereq)
         {
             if (!Regex.IsMatch(timereq, "^\\d+$"))
@@ -353,7 +359,9 @@ namespace Oxide.Plugins
             foreach (var entry in topList)
                SendMessageFromID(sender, "topEntry", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
         }
-        
+        #endregion Subcommands
+
+        #region Helpers
         void SendMessage(BasePlayer receiver, string messageID, params object[] args)
         {
             rust.SendChatMessage(receiver, "",
@@ -440,6 +448,7 @@ namespace Oxide.Plugins
             permission.RegisterPermission("loyalty.help", this);
         }
 
+        #endregion Helpers
     }
 
 }
