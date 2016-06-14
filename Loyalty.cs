@@ -109,7 +109,6 @@ namespace Oxide.Plugins
                 ["rewardRemoved"] = "Loyalty reward {0} was successfully removed.",
                 ["rewardEntry"] = "Alias: {0} Perm: {1} Req: {2}",
                 ["lookupEntry"] = "Player <color=lime>{0}</color> has accumulated a total of {1} loyalty points.",
-
         }, this); 
 
             timer.Repeat(60f, 0, () =>
@@ -161,7 +160,7 @@ namespace Oxide.Plugins
         void loyalty(BasePlayer sender, string command, string[] args)
         {
             if (args.Length <= 0)
-                if (permission.UserHasPermission(sender.UserIDString, "loyalty.loyalty"))
+                if (permission.UserHasPermission(sender.UserIDString, "loyalty.loyalty") || sender.IsAdmin())
                 {
                     if (data.players.ContainsKey(sender.userID))
                         SendMessage(sender, "loyaltyCurrent", data.players[sender.userID].loyalty);
@@ -176,7 +175,7 @@ namespace Oxide.Plugins
                 switch (args[0].ToLower())
                 {
                     case "add":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.add"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.add") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
@@ -190,7 +189,7 @@ namespace Oxide.Plugins
                         break;
 
                     case "remove":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.remove"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.remove") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
@@ -204,7 +203,7 @@ namespace Oxide.Plugins
                         break;
 
                     case "reset":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.reset"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.reset") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
@@ -218,7 +217,7 @@ namespace Oxide.Plugins
                         break;
 
                     case "set":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.set"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.set") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
@@ -232,7 +231,7 @@ namespace Oxide.Plugins
                         break;
 
                     case "rewards":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewards"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewards") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
@@ -247,7 +246,7 @@ namespace Oxide.Plugins
                         break;
 
                     case "help":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.help"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.help") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
@@ -261,7 +260,7 @@ namespace Oxide.Plugins
                         break;
 
                     case "lookup":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.lookup"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.lookup") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
@@ -275,7 +274,7 @@ namespace Oxide.Plugins
                         break;
 
                     case "top":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.top"))
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.top") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
