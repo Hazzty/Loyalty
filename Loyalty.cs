@@ -65,7 +65,7 @@ namespace Oxide.Plugins
         }
         #endregion Classes
 
-        Data data;
+        private Data data;
 
         #region Hooks
         void Init()
