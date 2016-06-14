@@ -65,60 +65,19 @@ namespace Oxide.Plugins
 
         Data data;
 
-		void Init()
+        void Init()
 		{
-            lang.RegisterMessages(new Dictionary<string, string>
-            {
-                ["syntaxAdd"] = "<color=red>Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}</color>",
-                ["syntaxRemove"] = "<color=red>Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}</color>",
-                ["syntaxSet"] = "<color=red>Too few or too many arguments. \nUse /loyalty set {string: username} {int: loyaltyPoints}</color>",
-                ["syntaxReset"] = "<color=red>Too few or too many arguments. \nUse /loyalty reset {string: username}</color>",
-                ["syntaxHelp"] = "<color=red>Too few or too many arguments. \nUse /loyalty help</color>",
-                ["syntaxRewards"] = "<color=red>Too few or too many arguments. \nUse /loyalty rewards</color>",
-                ["syntaxLookup"] = "<color=red>Too few or too many arguments. \nUse /loyalty lookup {string: playername}</color>",
-                ["syntaxTop"] = "<color=red>Too few or too many arguments. \nUse /loyalty top</color>",
-                ["syntaxNotInt"] = "Invalid syntax. Loyalty requirement needs to be a positive integer.",
-                ["rewardExists"] = "A reward for the permission {0} already exists.",
-                ["rewardNoExist"] = "No reward for the permission ",
-                ["rewardRemoved"] = "Loyalty reward {0} was successfully removed.",
-                ["rewardEntry"] = "Alias: {0} Perm: {1} Req: {2}",
-                ["accessGained"] = "Congratulations by spending <color=yellow>{0 minutes</color> on <color=yellow>{1}</color> you have gained access to the command <color=grey>{2}</color>. Thank you for playing!",
-                ["accessDenied"] = "<color=red>You do not have access to that command.</color>",
-                ["accessLost"] = "<color=red>You have lost access to <color=yellow>{0}</color> due to an administrator changing your loyalty.</color>",
-                ["loyaltyCurrent"] = "You have accumulated a total of<color=yellow> {0} </color>loyalty points by playing on <color=yellow>{1}</color>",
-                ["noLoyalty"] = "<color=red>You have not yet earned any loyalty point. Check again later!</color>",
-                ["noCommand"] = "<color=red>There's no command by that name.</color>",
-                ["playerNotFound"] = "<color=red>No player by the name {0} was found.</color>",
-                ["fatalError"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
-                ["messageStyling"] = "{0}",
-                ["senderStyling"] = "<color=lime>{0}</color>",
-                ["setSuccess"] = "Player {0}'s loyalty points were successfully set to {1}.",
-                ["resetSuccess"] = "Player {0}'s loyalty points were successfully reset.",
-                ["addSuccess"] = "Successfully added: {0} {1} {2}",
-                ["topEntry"] = "{0}. <color=lime>{1}</color> - {2}",
-                ["lookupEntry"] = "Player <color=lime>{0}</color> has accumulated a total of {1} loyalty points.",
-                ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/rewards/top/lookup</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
-            }, this);
+            RegisterMessages();
+            RegisterPermissions();
         }
 		
         void Loaded()
         {
             data = Interface.Oxide.DataFileSystem.ReadObject<Data>("LoyaltyData");
-            permission.RegisterPermission("loyalty.loyalty", this);
-            permission.RegisterPermission("loyalty.add", this);
-            permission.RegisterPermission("loyalty.remove", this);
-            permission.RegisterPermission("loyalty.reset", this);
-            permission.RegisterPermission("loyalty.set", this);
-            permission.RegisterPermission("loyalty.lookup", this);
-            permission.RegisterPermission("loyalty.top", this);
-            permission.RegisterPermission("loyalty.rewards", this);
-            permission.RegisterPermission("loyalty.help", this);
-
             timer.Repeat(60f, 0, () =>
             {
                 foreach (var player in BasePlayer.activePlayerList) 
                 {
-
                     if (!data.players.ContainsKey(player.userID))
                         data.players.Add(player.userID, new Player(player.userID, player.displayName, 1));
                     else
@@ -431,6 +390,56 @@ namespace Oxide.Plugins
 
             return false;
         }
+
+        void RegisterMessages()
+        {
+            lang.RegisterMessages(new Dictionary<string, string>
+            {
+                ["syntaxAdd"] = "<color=red>Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}</color>",
+                ["syntaxRemove"] = "<color=red>Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}</color>",
+                ["syntaxSet"] = "<color=red>Too few or too many arguments. \nUse /loyalty set {string: username} {int: loyaltyPoints}</color>",
+                ["syntaxReset"] = "<color=red>Too few or too many arguments. \nUse /loyalty reset {string: username}</color>",
+                ["syntaxHelp"] = "<color=red>Too few or too many arguments. \nUse /loyalty help</color>",
+                ["syntaxRewards"] = "<color=red>Too few or too many arguments. \nUse /loyalty rewards</color>",
+                ["syntaxLookup"] = "<color=red>Too few or too many arguments. \nUse /loyalty lookup {string: playername}</color>",
+                ["syntaxTop"] = "<color=red>Too few or too many arguments. \nUse /loyalty top</color>",
+                ["syntaxNotInt"] = "Invalid syntax. Loyalty requirement needs to be a positive integer.",
+                ["rewardExists"] = "A reward for the permission {0} already exists.",
+                ["rewardNoExist"] = "No reward for the permission ",
+                ["rewardRemoved"] = "Loyalty reward {0} was successfully removed.",
+                ["rewardEntry"] = "Alias: {0} Perm: {1} Req: {2}",
+                ["accessGained"] = "Congratulations by spending <color=yellow>{0 minutes</color> on <color=yellow>{1}</color> you have gained access to the command <color=grey>{2}</color>. Thank you for playing!",
+                ["accessDenied"] = "<color=red>You do not have access to that command.</color>",
+                ["accessLost"] = "<color=red>You have lost access to <color=yellow>{0}</color> due to an administrator changing your loyalty.</color>",
+                ["loyaltyCurrent"] = "You have accumulated a total of<color=yellow> {0} </color>loyalty points by playing on <color=yellow>{1}</color>",
+                ["noLoyalty"] = "<color=red>You have not yet earned any loyalty point. Check again later!</color>",
+                ["noCommand"] = "<color=red>There's no command by that name.</color>",
+                ["playerNotFound"] = "<color=red>No player by the name {0} was found.</color>",
+                ["fatalError"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
+                ["messageStyling"] = "{0}",
+                ["senderStyling"] = "<color=lime>{0}</color>",
+                ["setSuccess"] = "Player {0}'s loyalty points were successfully set to {1}.",
+                ["resetSuccess"] = "Player {0}'s loyalty points were successfully reset.",
+                ["addSuccess"] = "Successfully added: {0} {1} {2}",
+                ["topEntry"] = "{0}. <color=lime>{1}</color> - {2}",
+                ["lookupEntry"] = "Player <color=lime>{0}</color> has accumulated a total of {1} loyalty points.",
+                ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/rewards/top/lookup</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
+            }, this);
+        }
+
+        void RegisterPermissions()
+        {
+            permission.RegisterPermission("loyalty.loyalty", this);
+            permission.RegisterPermission("loyalty.add", this);
+            permission.RegisterPermission("loyalty.remove", this);
+            permission.RegisterPermission("loyalty.reset", this);
+            permission.RegisterPermission("loyalty.set", this);
+            permission.RegisterPermission("loyalty.lookup", this);
+            permission.RegisterPermission("loyalty.top", this);
+            permission.RegisterPermission("loyalty.rewards", this);
+            permission.RegisterPermission("loyalty.help", this);
+        }
+
     }
 
 }
