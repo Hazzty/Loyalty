@@ -392,7 +392,7 @@ namespace Oxide.Plugins
             SendMessage(sender, "Top 10 most loyal players");
 
             foreach (var entry in topList)
-               SendMessage(sender, "topEntry", ++counter, entry.Value.name, entry.Value.loyalty);
+               SendMessageFromID(sender, "topEntry", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
         }
         
         void SendMessage(BasePlayer receiver, string messageID, params object[] args)
@@ -413,9 +413,9 @@ namespace Oxide.Plugins
         void SendMessageFromID(BasePlayer receiver, string messageID, ulong senderID, params object[] args)
         {
             rust.SendChatMessage(receiver, 
-                String.Format(lang.GetMessage("senderStyling", this), BasePlayer.FindByID(senderID).displayName),
+                String.Format(lang.GetMessage("senderStyling", this), "",
                 String.Format(lang.GetMessage("messageStyling", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))),
-                Convert.ToString(senderID));
+                Convert.ToString(senderID)));
         }
 
         string FormatMessage(string messageID, params object[] args)
