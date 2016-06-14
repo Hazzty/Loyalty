@@ -65,25 +65,14 @@ namespace Oxide.Plugins
 
         Data data;
 
-        void Loaded()
-        {
-            data = Interface.Oxide.DataFileSystem.ReadObject<Data>("LoyaltyData");
-            permission.RegisterPermission("loyalty.loyalty", this);
-            permission.RegisterPermission("loyalty.add", this);
-            permission.RegisterPermission("loyalty.remove", this);
-            permission.RegisterPermission("loyalty.reset", this);
-            permission.RegisterPermission("loyalty.set", this);
-            permission.RegisterPermission("loyalty.lookup", this);
-            permission.RegisterPermission("loyalty.top", this);
-            permission.RegisterPermission("loyalty.rewards", this);
-            permission.RegisterPermission("loyalty.help", this);
-
+		void Init()
+		{
             lang.RegisterMessages(new Dictionary<string, string>
             {
                 ["accessDenied"] = "<color=red>You do not have access to that command.</color>",
                 ["noLoyalty"] = "<color=red>You have not yet earned any loyalty point. Check again later!</color>",
-                ["loyaltyCurrent"] = "You have accumulated a total of<color=yellow> {0} </color>loyalty points by playing on <color=yellow>" + Config["serverName"].ToString() + "</color>",
-                ["accessGained"] = "Congratulations by spending<color=yellow> {0} minutes</color> on <color=yellow>" + Config["serverName"].ToString() + " </color>you have gained access to the command  <color=grey>{1}</color>. Thank you for playing!",
+                ["loyaltyCurrent"] = "You have accumulated a total of<color=yellow> {0} </color>loyalty points by playing on <color=yellow>{1}</color>",
+                ["accessGained"] = "Congratulations by spending <color=yellow>{0 minutes</color> on <color=yellow>{1}</color> you have gained access to the command <color=grey>{2}</color>. Thank you for playing!",
                 ["accessLost"] = "<color=red>You have lost access to <color=yellow>{0}</color> due to an administrator changing your loyalty.</color>",
                 ["syntaxAdd"] = "<color=red>Too few or too many arguments. \nUse /loyalty add {string: /alias} {string: permission.permission {int: loyaltyrequirement}</color>",
                 ["syntaxRemove"] = "<color=red>Too few or too many arguments. \nUse /loyalty remove {string: permission.permission}</color>",
@@ -105,11 +94,25 @@ namespace Oxide.Plugins
                 ["addSuccess"] = "Successfully added: {0} {1} {2}",
                 ["topEntry"] = "{0}. <color=lime>{1}</color> - {2}",
                 ["fatalError"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
-                ["playerNotFound"] = "No player by the name {0} was found.", 
+                ["playerNotFound"] = "No player by the name {0} was found.",
                 ["rewardRemoved"] = "Loyalty reward {0} was successfully removed.",
                 ["rewardEntry"] = "Alias: {0} Perm: {1} Req: {2}",
                 ["lookupEntry"] = "Player <color=lime>{0}</color> has accumulated a total of {1} loyalty points.",
-        }, this); 
+            }, this);
+        }
+		
+        void Loaded()
+        {
+            data = Interface.Oxide.DataFileSystem.ReadObject<Data>("LoyaltyData");
+            permission.RegisterPermission("loyalty.loyalty", this);
+            permission.RegisterPermission("loyalty.add", this);
+            permission.RegisterPermission("loyalty.remove", this);
+            permission.RegisterPermission("loyalty.reset", this);
+            permission.RegisterPermission("loyalty.set", this);
+            permission.RegisterPermission("loyalty.lookup", this);
+            permission.RegisterPermission("loyalty.top", this);
+            permission.RegisterPermission("loyalty.rewards", this);
+            permission.RegisterPermission("loyalty.help", this);
 
             timer.Repeat(60f, 0, () =>
             {
@@ -125,7 +128,7 @@ namespace Oxide.Plugins
                             if (data.players[player.userID].loyalty == reward.requirement)
                             {
                                 rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(reward.permission));
-                                SendMessage(player, "accessGranted", reward.requirement, reward.alias);
+                                SendMessage(player, "accessGranted", reward.requirement, (string)Config["serverName"], reward.alias);
                             }
                     }
                     Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
@@ -135,7 +138,8 @@ namespace Oxide.Plugins
 
         protected override void LoadDefaultConfig()
         {
-
+            PrintWarning("Creating a new configuration file for Loyalty");
+            Config.Clear();
             Config["serverName"] = "DefaultServer";
             Config["serverID"] = "76561197981174278";
             SaveConfig();
@@ -163,7 +167,7 @@ namespace Oxide.Plugins
                 if (permission.UserHasPermission(sender.UserIDString, "loyalty.loyalty") || sender.IsAdmin())
                 {
                     if (data.players.ContainsKey(sender.userID))
-                        SendMessage(sender, "loyaltyCurrent", data.players[sender.userID].loyalty);
+                        SendMessage(sender, "loyaltyCurrent", data.players[sender.userID].loyalty, Config["serverName"]);
                     else
                         SendMessage(sender, "noLoyalty");
                 }
@@ -351,7 +355,7 @@ namespace Oxide.Plugins
                 if (data.players[player.id].loyalty >= reward.requirement)
                 {
                     rust.RunServerCommand("grant user " + rust.QuoteSafe(player.name) + " " + reward.permission);
-                    SendMessage(BasePlayer.FindByID(player.id), FormatMessage("accessGained", reward.requirement, reward.alias));
+                    SendMessage(BasePlayer.FindByID(player.id), FormatMessage("accessGained", reward.requirement, Config["serverName"], reward.alias));
                 }
                 if(data.players[player.id].loyalty < reward.requirement)
                 {
