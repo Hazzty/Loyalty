@@ -237,22 +237,6 @@ namespace Oxide.Plugins
                         }
                         SendMessage(sender, set(args[1], args[2]));
                         break;
-
-                    case "rewards":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewards") && !sender.IsAdmin())
-                        {
-                            SendMessage(sender, "accessDenied");
-                            return;
-                        }
-                        if (args.Length != 1)
-                        {
-                            SendMessage(sender, "syntaxRewards");
-                            return;
-                        }
-
-                        rewards(sender);
-                        break;
-
                     case "help":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.help") && !sender.IsAdmin())
                         {
@@ -387,12 +371,7 @@ namespace Oxide.Plugins
 
         }
 
-        void rewards(BasePlayer sender) //Todo make less useless
-        {
-            foreach (var reward in data.rewards)
                 SendMessage(sender, "entryReward", reward.alias, reward.permission, reward.requirement);
-        }
-
         void lookup(BasePlayer sender, string player)
         {
 
@@ -498,7 +477,6 @@ namespace Oxide.Plugins
                 ["syntaxSet"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty set {string: username} {int: loyaltyPoints}</color></color>",
                 ["syntaxReset"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty reset {string: username}</color></color>",
                 ["syntaxHelp"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty help</color></color>",
-                ["syntaxRewards"] = "<color=red>Too few or too many arguments. \nUse <color=grey/loyalty rewards</color></color>",
                 ["syntaxLookup"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty lookup {string: playername}</color></color>",
                 ["syntaxTop"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty top</color></color>",
                 ["syntaxAddGroup"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty addg {string: group} {int: loyaltyrequirement}</color></color>",
@@ -527,7 +505,7 @@ namespace Oxide.Plugins
                 ["groupNoExists"] = "<color=red>No group reward called <color=grey>{0}</color> was found.</color>",
                 ["groupRemoved"] = "Group reward {0} was successfully removed.",
                 ["groupAssigned"] = "Congratulations, by spending <color=yellow>{0} minutes</color> on <color=yellow>{1}</color> you have been assigned the usergroup <color=grey>{2}</color>. Thank you for playing!",
-                ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/rewards/top/lookup/addg/removeg</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
+                ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/top/lookup/addg/removeg</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
             }, this);
         }
 
@@ -540,7 +518,6 @@ namespace Oxide.Plugins
             permission.RegisterPermission("loyalty.set", this);
             permission.RegisterPermission("loyalty.lookup", this);
             permission.RegisterPermission("loyalty.top", this);
-            permission.RegisterPermission("loyalty.rewards", this);
             permission.RegisterPermission("loyalty.help", this);
             permission.RegisterPermission("loyalty.addgroup", this);
             permission.RegisterPermission("loyalty.removegroup", this);
