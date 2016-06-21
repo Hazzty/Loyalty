@@ -113,9 +113,11 @@ namespace Oxide.Plugins
                             foreach (var usergroup in data.usergroups)
                                 if (data.players[player.userID].loyalty == usergroup.requirement)
                                 {
-                                    rust.RunServerCommand("usergroup add" + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(usergroup.usergroup));
+                                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(usergroup.usergroup));
                                     SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
                                 }
+                                else if (data.players[player.userID].loyalty <= usergroup.requirement)
+                                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(usergroup.usergroup));
                         }
                     }
                     Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
@@ -133,7 +135,7 @@ namespace Oxide.Plugins
             PrintWarning("Creating a new configuration file for Loyalty");
             Config.Clear();
             Config["serverName"] = "DefaultServer";
-            Config["serverID"] = "76561197981174278";
+            Config["serverIconID"] = "00000000000000000";
             Config["allowAdmin"] = false;
             SaveConfig();
         }
@@ -337,10 +339,11 @@ namespace Oxide.Plugins
 
             data.players[player.id].loyalty = 0;
             foreach (var reward in data.rewards)
-            {
                 rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission);
-                SendMessage(BasePlayer.FindByID(player.id), "accessLost", reward.alias);
-            }
+            foreach (var group in data.usergroups)
+                rust.RunServerCommand("usergroup remove " + player.name + " " + group.usergroup);
+
+            SendMessage(BasePlayer.FindByID(player.id), "loyaltyReset");
             return FormatMessage("successReset", player.name);
         }
 
@@ -357,16 +360,26 @@ namespace Oxide.Plugins
             foreach (var reward in data.rewards)
             {
                 if (data.players[player.id].loyalty >= reward.requirement)
-                {
                     rust.RunServerCommand("grant user " + rust.QuoteSafe(player.name) + " " + reward.permission);
-                    SendMessage(BasePlayer.FindByID(player.id), "accessGranted", reward.requirement, Config["serverName"].ToString(), reward.alias);
-                }
-                if(data.players[player.id].loyalty < reward.requirement)
-                {
+                else
                     rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission);
-                    SendMessage(BasePlayer.FindByID(player.id), "accessLost", reward.alias);
-                }
             }
+            SendMessage(BasePlayer.FindByID(player.id), "accessLost", newLoyalty);
+
+            UserGroup newGroup = null;
+            foreach(var group in data.usergroups)
+            {
+                if(data.players[player.id].loyalty >= group.requirement)
+                {
+                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + rust.QuoteSafe(group.usergroup));
+                    newGroup = group;
+                }
+                else
+                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + rust.QuoteSafe(group.usergroup));
+            }
+            if (newGroup != null)
+                SendMessage(BasePlayer.FindByID(player.id), "groupChanged", newLoyalty, newGroup.usergroup);
+
             return FormatMessage("successSet", player.name, Convert.ToUInt32(newLoyalty, 10));
 
         }
@@ -425,7 +438,7 @@ namespace Oxide.Plugins
         {
             rust.SendChatMessage(receiver, "",
                String.Format(lang.GetMessage("stylingMessage", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))),
-               Config["serverID"].ToString());
+               Config["serverIconID"].ToString());
         }
 
         void SendMessageAsServer(BasePlayer receiver, string messageID, params object[] args)
@@ -433,7 +446,7 @@ namespace Oxide.Plugins
             rust.SendChatMessage(receiver,
                String.Format(lang.GetMessage("stylingSender", this), Config["serverName"]),
                 String.Format(lang.GetMessage("stylingMessage", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))), 
-                Config["serverID"].ToString());
+                Config["serverIconID"].ToString());
         }
 
         void SendMessageFromID(BasePlayer receiver, string messageID, ulong senderID, params object[] args)
@@ -485,8 +498,9 @@ namespace Oxide.Plugins
                 ["rewardRemoved"] = "Loyalty reward {0} was successfully removed.",
                 ["accessGranted"] = "Congratulations, by spending <color=yellow>{0} minutes</color> on <color=yellow>{1}</color> you have gained access to the command <color=grey>{2}</color>. Thank you for playing!",
                 ["accessDenied"] = "<color=red>You do not have access to that command.</color>",
-                ["accessLost"] = "<color=red>You have lost access to <color=yellow>{0}</color> due to an administrator changing your loyalty.</color>",
+                ["accessLost"] = "<color=red>Your loyalty was changed to <color=grey>{0}</color> by an admin. You have lost and/or gained access to loyalty rewards accordingly.</color>",
                 ["loyaltyCurrent"] = "You have accumulated a total of<color=yellow> {0} </color>loyalty points by playing on <color=yellow>{1}</color>",
+                ["loyaltyReset"] = "<color=red>Your loyalty has been reset by an administrator. You have lost access to all commands and/or groups your previously had access to.</color>",
                 ["errorNoLoyalty"] = "<color=red>You have not yet earned any loyalty points. Check again in a minute!</color>",
                 ["errorNoCommand"] = "<color=red>There's no command by that name.</color>",
                 ["errorPlayerNotFound"] = "<color=red>No player by the name {0} was found.</color>",
@@ -503,6 +517,7 @@ namespace Oxide.Plugins
                 ["groupExists"] = "<color=red>A loyalty reward for the usergroup <color=grey>{0}</color> already exists.</color>",
                 ["groupNoExists"] = "<color=red>No group reward called <color=grey>{0}</color> was found.</color>",
                 ["groupRemoved"] = "Group reward {0} was successfully removed.",
+                ["groupChanged"] = "<color=red>Your loyalty was set to <color=grey>{0}</color> by an admin. Your current group is: <color=grey>{1}</color></color>",
                 ["groupAssigned"] = "Congratulations, by spending <color=yellow>{0} minutes</color> on <color=yellow>{1}</color> you have been assigned the usergroup <color=grey>{2}</color>. Thank you for playing!",
                 ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/top/lookup/addg/removeg</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
             }, this);
