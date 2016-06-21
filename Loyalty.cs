@@ -533,6 +533,7 @@ namespace Oxide.Plugins
             permission.RegisterPermission("loyalty.rewards", this);
             permission.RegisterPermission("loyalty.help", this);
             permission.RegisterPermission("loyalty.addgroup", this);
+            permission.RegisterPermission("loyalty.removegroup", this);
         }
 
         #endregion Helpers
