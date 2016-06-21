@@ -97,27 +97,30 @@ namespace Oxide.Plugins
             {
                 foreach (var player in BasePlayer.activePlayerList) 
                 {
-                    if (!data.players.ContainsKey(player.userID))
-                        data.players.Add(player.userID, new Player(player.userID, player.displayName, 1));
-                    else
+                    if ((player.IsAdmin() && (bool)Config["allowAdmin"]) || !player.IsAdmin())
                     {
-                        data.players[player.userID].loyalty += 1;
-                        foreach (var reward in data.rewards)
-                            if (data.players[player.userID].loyalty == reward.requirement)
-                            {
-                                rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(reward.permission));
-                                SendMessage(player, "accessGranted", reward.requirement, Config["serverName"].ToString(), reward.alias);
-                            }
-                        foreach(var usergroup in data.usergroups)
-                            if(data.players[player.userID].loyalty == usergroup.requirement)
-                            {
-                                rust.RunServerCommand("usergroup add" + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(usergroup.usergroup));
-                                SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
-                            }
+                        if (!data.players.ContainsKey(player.userID))
+                            data.players.Add(player.userID, new Player(player.userID, player.displayName, 1));
+                        else
+                        {
+                            data.players[player.userID].loyalty += 1;
+                            foreach (var reward in data.rewards)
+                                if (data.players[player.userID].loyalty == reward.requirement)
+                                {
+                                    rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(reward.permission));
+                                    SendMessage(player, "accessGranted", reward.requirement, Config["serverName"].ToString(), reward.alias);
+                                }
+                            foreach (var usergroup in data.usergroups)
+                                if (data.players[player.userID].loyalty == usergroup.requirement)
+                                {
+                                    rust.RunServerCommand("usergroup add" + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(usergroup.usergroup));
+                                    SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
+                                }
+                        }
                     }
                     Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
                 }
-            });
+            }); 
         }
 
         void Unload()
@@ -131,15 +134,19 @@ namespace Oxide.Plugins
             Config.Clear();
             Config["serverName"] = "DefaultServer";
             Config["serverID"] = "76561197981174278";
+            Config["allowAdmin"] = false;
             SaveConfig();
         }
 
         void OnPlayerInit(BasePlayer player)
         {
-            if (!data.players.ContainsKey(player.userID))
+            if ((player.IsAdmin() && (bool)Config["allowAdmin"]) || !player.IsAdmin())
             {
-                data.players.Add(player.userID, new Player(player.userID, player.displayName, 0));
-                Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
+                if (!data.players.ContainsKey(player.userID))
+                {
+                    data.players.Add(player.userID, new Player(player.userID, player.displayName, 0));
+                    Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
+                }
             }
         }
         #endregion Hooks
@@ -431,6 +438,7 @@ namespace Oxide.Plugins
                 }
             return "errorFatal";
         }
+        #endregion Subcommands
 
         #region Helpers
         void SendMessage(BasePlayer receiver, string messageID, params object[] args)
@@ -500,7 +508,7 @@ namespace Oxide.Plugins
                 ["accessDenied"] = "<color=red>You do not have access to that command.</color>",
                 ["accessLost"] = "<color=red>You have lost access to <color=yellow>{0}</color> due to an administrator changing your loyalty.</color>",
                 ["loyaltyCurrent"] = "You have accumulated a total of<color=yellow> {0} </color>loyalty points by playing on <color=yellow>{1}</color>",
-                ["errorNoLoyalty"] = "<color=red>You have not yet earned any loyalty point. Check again later!</color>",
+                ["errorNoLoyalty"] = "<color=red>You have not yet earned any loyalty points. Check again in a minute!</color>",
                 ["errorNoCommand"] = "<color=red>There's no command by that name.</color>",
                 ["errorPlayerNotFound"] = "<color=red>No player by the name {0} was found.</color>",
                 ["errorFatal"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
