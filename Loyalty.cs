@@ -429,7 +429,6 @@ namespace Oxide.Plugins
 
         string removeUserGroup(string usergroup)
         {
-            if (!UserGroupExists(usergroup))
             if (!UserGroupExists(rust.QuoteSafe(usergroup)))
                 return FormatMessage("groupNoExists", usergroup);
             foreach (UserGroup usergroupEntry in data.usergroups)
