@@ -38,6 +38,7 @@ Loyalty points are a way to measure how long a player has spent on the server. E
 The config file for the plugin is located in Oxide's default config file folder(serverRoot/server/serverIdentity/oxide/config)
 * <b>"serverIconID": "00000000000000000"</b> - Change "00000000000000000" to the steam id of a steam user whose profile picture you want the plugin to use when sending messages.
 * <b>"serverName": "DefaultServer"</b> - Change "DefaultServer" to whatever server name you want displayed when the server sends messages.
+* <b>"allowAdmin": false</b> - Set this to true to allow admins loyalty to be recorded.
 
 <h2>Lang</h2>
 The lang file is located in oxide's default lang folder(serverRoot/server/serverIdentity/oxide/lang). It contains all the strings that are used in the plugin, these can be customized but don't be surprised if you mess something up by fiddling with them. Don't worry though, just delete the file and it will recreate itself on your next restart/reload.
