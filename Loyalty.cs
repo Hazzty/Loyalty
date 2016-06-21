@@ -371,7 +371,6 @@ namespace Oxide.Plugins
 
         }
 
-                SendMessage(sender, "entryReward", reward.alias, reward.permission, reward.requirement);
         void lookup(BasePlayer sender, string player)
         {
 
@@ -384,7 +383,7 @@ namespace Oxide.Plugins
 
         void top(BasePlayer sender)
         {
-            var topList = (from entry in data.players orderby entry.Value.loyalty descending select entry).Take(10).ToDictionary(pair => pair.Key, pair => pair.Value);
+            var topList = (from entry in data.players orderby entry.Value.loyalty descending select entry).Take(10);
             int counter = 0;
             SendMessage(sender, "Top 10 most loyal players");
 
