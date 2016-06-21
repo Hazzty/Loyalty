@@ -339,6 +339,7 @@ namespace Oxide.Plugins
                 if (reward.permission == rust.QuoteSafe(permission))
                 {
                    data.rewards.Remove(reward);
+                   Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
                    return FormatMessage("rewardRemoved", permission);
                 }
             return "errorFatal";
@@ -425,15 +426,17 @@ namespace Oxide.Plugins
 
             return FormatMessage("successAddGroup", rust.QuoteSafe(usergroup), Convert.ToUInt32(requirement, 10));
         }
-        #endregion Subcommands
+
         string removeUserGroup(string usergroup)
         {
             if (!UserGroupExists(usergroup))
+            if (!UserGroupExists(rust.QuoteSafe(usergroup)))
                 return FormatMessage("groupNoExists", usergroup);
-            foreach (LoyaltyReward reward in data.rewards)
-                if (reward.permission == rust.QuoteSafe(usergroup))
+            foreach (UserGroup usergroupEntry in data.usergroups)
+                if (usergroupEntry.usergroup == rust.QuoteSafe(usergroup))
                 {
-                    data.rewards.Remove(reward);
+                    data.usergroups.Remove(usergroupEntry);
+                    Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
                     return FormatMessage("groupRemoved", usergroup);
                 }
             return "errorFatal";
