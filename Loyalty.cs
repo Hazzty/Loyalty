@@ -552,7 +552,7 @@ namespace Oxide.Plugins
                 ["syntaxLookup"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty lookup {string: playername}</color></color>",
                 ["syntaxTop"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty top</color></color>",
                 ["syntaxRewards"] = "<color=red>Too few or too many arguments.\n Use <color=grey>/loyalty rewards</color></color>",
-                ["syntaxRewards"] = "<color=red>Too few or too many arguments.\n Use <color=grey>/loyalty rewardsg</color></color>",
+                ["syntaxRewardsg"] = "<color=red>Too few or too many arguments.\n Use <color=grey>/loyalty rewardsg</color></color>",
                 ["syntaxAddGroup"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty addg {string: group} {int: loyaltyrequirement}</color></color>",
                 ["syntaxNotInt"] = "<color=red>Invalid syntax. Parameter <color=grey>#{0}</color> needs to be a positive integer.</color>",
                 ["rewardExists"] = "<color=red>A reward for the permission <color=grey>{0}</color> already exists.</color>",
