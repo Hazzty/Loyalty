@@ -424,7 +424,7 @@ namespace Oxide.Plugins
         {
             var topList = (from entry in data.players orderby entry.Value.loyalty descending select entry).Take(10);
             int counter = 0;
-            SendMessage(sender, "Top 10 most loyal players");
+            SendMessage(sender, "Top " + topList.Count() + "most loyal players");
 
             foreach (var entry in topList)
                 SendMessageFromID(sender, "entryTop", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
@@ -435,7 +435,7 @@ namespace Oxide.Plugins
             var rewards = (from entry in data.rewards orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
             if (rewards.Count() > 0)
             {
-                SendMessage(sender, "List of next 5 upcoming permission rewards");
+                SendMessage(sender, "List of next " + rewards.Count() + " upcoming permission rewards out of the total: " + data.rewards.Count());
                 foreach (var entry in rewards)
                     SendMessage(sender, "entryRewards", entry.requirement, entry.alias);
             }
@@ -447,7 +447,7 @@ namespace Oxide.Plugins
             var rewards = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
             if (rewards.Count() > 0)
             {
-                SendMessage(sender, "List of next 5 upcoming usergroups");
+                SendMessage(sender, "List of next " + rewards.Count() + " upcoming usergroups out of the total: " + data.usergroups.Count());
                 foreach (var entry in rewards)
                     SendMessage(sender, "entryRewards", entry.requirement, entry.usergroup);
             }
