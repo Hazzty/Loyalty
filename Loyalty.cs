@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.1.4")]
+    [Info("Loyalty", "Bamabo", "1.1.5")]
     [Description("Reward your players for play time with new permissions/usergroups")]
 
     class Loyalty : RustPlugin
@@ -110,14 +110,21 @@ namespace Oxide.Plugins
                                     rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(reward.permission));
                                     SendMessage(player, "accessGranted", reward.requirement, Config["serverName"].ToString(), reward.alias);
                                 }
+                            bool groupAssigned = false;
                             foreach (var usergroup in data.usergroups)
-                                if (data.players[player.userID].loyalty == usergroup.requirement)
+                            {
+                                if (data.players[player.userID].loyalty == usergroup.requirement && !groupAssigned)
                                 {
                                     rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
+                                    groupAssigned = true;
                                     SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
                                 }
-                                else if (data.players[player.userID].loyalty > usergroup.requirement)
+                                else if (groupAssigned && usergroup.requirement < data.players[player.userID].loyalty)
+                                {
                                     rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
+
+                                }
+                            }
                         }
                     }
                     Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
@@ -425,7 +432,7 @@ namespace Oxide.Plugins
         {
             var topList = (from entry in data.players orderby entry.Value.loyalty descending select entry).Take(10);
             int counter = 0;
-            SendMessage(sender, "Top " + topList.Count() + "most loyal players");
+            SendMessage(sender, "Top " + topList.Count() + " most loyal players out of " + data.players.Count());
 
             foreach (var entry in topList)
                 SendMessageFromID(sender, "entryTop", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
