@@ -116,7 +116,7 @@ namespace Oxide.Plugins
                                     rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
                                     SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
                                 }
-                                else if (data.players[player.userID].loyalty <= usergroup.requirement)
+                                else if (data.players[player.userID].loyalty > usergroup.requirement)
                                     rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
                         }
                     }
