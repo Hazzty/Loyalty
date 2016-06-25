@@ -16,7 +16,7 @@ Loyalty points are a way to measure how long a player has spent on the server. E
 * <b>/loyalty addg {string: groupname} {int: loyaltyrequirement}</b> - Adds a usergroup as a loyalty reward 
 * <b>/loyalty removeg {string: groupname}</b> - Removes a usergroup loyalty reward
 * <b>/loyalty rewards</b> - Lists the senders next 5 upcoming permission rewards
-* <b>/loyalty rewardsg</b> - Lists the senders enxt 5 upcoming usergroup rewards
+* <b>/loyalty rewardsg</b> - Lists the senders next 5 upcoming usergroup rewards
 
 <h2>Permissions</h2>
 * <b>loyalty.loyalty</b> - Allows the use of /loyalty
