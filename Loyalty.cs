@@ -125,6 +125,7 @@ namespace Oxide.Plugins
             });
         }
 
+
         void Unload()
         {
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
@@ -433,9 +434,10 @@ namespace Oxide.Plugins
         void rewards(BasePlayer sender)
         {
             var rewards = (from entry in data.rewards orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
+            int upcomingRewardCount = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Count();
             if (rewards.Count() > 0)
             {
-                SendMessage(sender, "List of next " + rewards.Count() + " upcoming permission rewards out of the total: " + data.rewards.Count());
+                SendMessage(sender, "List of next " + rewards.Count() + " upcoming permission rewards out of the total: " + upcomingRewardCount);
                 foreach (var entry in rewards)
                     SendMessage(sender, "entryRewards", entry.requirement, entry.alias);
             }
@@ -445,9 +447,10 @@ namespace Oxide.Plugins
         void rewardsg(BasePlayer sender)
         {
             var rewards = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
+            int upcomingRewardCount = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Count();
             if (rewards.Count() > 0)
             {
-                SendMessage(sender, "List of next " + rewards.Count() + " upcoming usergroups out of the total: " + data.usergroups.Count());
+                SendMessage(sender, "List of next " + rewards.Count() + " upcoming usergroups out of the total: " + upcomingRewardCount);
                 foreach (var entry in rewards)
                     SendMessage(sender, "entryRewards", entry.requirement, entry.usergroup);
             }
