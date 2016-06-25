@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.1.2")]
+    [Info("Loyalty", "Bamabo", "1.1.3")]
     [Description("Provides players with additional permissions for spending time on their server.")]
 
     class Loyalty : RustPlugin
