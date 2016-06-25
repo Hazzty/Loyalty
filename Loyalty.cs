@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.0.0")]
+    [Info("Loyalty", "Bamabo", "1.1.2")]
     [Description("Provides players with additional permissions for spending time on their server.")]
 
     class Loyalty : RustPlugin
@@ -48,7 +48,7 @@ namespace Oxide.Plugins
 
             public Player(ulong id, string name, uint loyalty = 0)
             {
-                this.id = id; 
+                this.id = id;
                 this.name = name;
                 this.loyalty = loyalty;
             }
@@ -69,7 +69,7 @@ namespace Oxide.Plugins
             public string usergroup { get; set; }
             public uint requirement { get; set; }
 
-            public UserGroup() { usergroup = ""; requirement = 0;}
+            public UserGroup() { usergroup = ""; requirement = 0; }
             public UserGroup(string usergroup, uint requirement = 0)
             {
                 this.usergroup = usergroup;
@@ -85,17 +85,17 @@ namespace Oxide.Plugins
 
         #region Hooks
         void Init()
-		{
+        {
             RegisterMessages();
             RegisterPermissions();
         }
-		
+
         void Loaded()
         {
             data = Interface.Oxide.DataFileSystem.ReadObject<Data>("LoyaltyData");
             timer.Repeat(60f, 0, () =>
             {
-                foreach (var player in BasePlayer.activePlayerList) 
+                foreach (var player in BasePlayer.activePlayerList)
                 {
                     if ((player.IsAdmin() && (bool)Config["allowAdmin"]) || !player.IsAdmin())
                     {
@@ -122,7 +122,7 @@ namespace Oxide.Plugins
                     }
                     Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
                 }
-            }); 
+            });
         }
 
         void Unload()
@@ -136,7 +136,7 @@ namespace Oxide.Plugins
             Config.Clear();
             Config["serverName"] = "DefaultServer";
             Config["serverIconID"] = "00000000000000000";
-            Config["allowAdmin"] = false;
+            Config["allowAdmin"] = true;
             SaveConfig();
         }
 
@@ -281,19 +281,44 @@ namespace Oxide.Plugins
                         top(sender);
                         break;
                     case "addg":
-                        if(!permission.UserHasPermission(sender.UserIDString, "loyalty.addgroup") && !sender.IsAdmin())
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.addgroup") && !sender.IsAdmin())
                         {
                             SendMessage(sender, "accessDenied");
                             return;
                         }
-                        if(args.Length != 3)
+                        if (args.Length != 3)
                         {
                             SendMessage(sender, "syntaxAddGroup");
                             return;
                         }
                         SendMessage(sender, addUserGroup(args[1], args[2]));
                         break;
-
+                    case "rewards":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewards") && !sender.IsAdmin())
+                        {
+                            SendMessage(sender, "accessDenied");
+                            return;
+                        }
+                        if (args.Length != 1)
+                        {
+                            SendMessage(sender, "syntaxRewards");
+                            return;
+                        }
+                        rewards(sender);
+                        break;
+                    case "rewardsg":
+                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewardsg") && !sender.IsAdmin())
+                        {
+                            SendMessage(sender, "accessDenied");
+                            return;
+                        }
+                        if (args.Length != 1)
+                        {
+                            SendMessage(sender, "syntaxRewardsg");
+                            return;
+                        }
+                        rewardsg(sender);
+                        break;
                     default:
                         SendMessage(sender, "errorNoCommand");
                         break;
@@ -324,9 +349,9 @@ namespace Oxide.Plugins
             foreach (LoyaltyReward reward in data.rewards)
                 if (reward.permission == rust.QuoteSafe(permission))
                 {
-                   data.rewards.Remove(reward);
-                   Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
-                   return FormatMessage("rewardRemoved", permission);
+                    data.rewards.Remove(reward);
+                    Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
+                    return FormatMessage("rewardRemoved", permission);
                 }
             return "errorFatal";
         }
@@ -367,9 +392,9 @@ namespace Oxide.Plugins
             SendMessage(BasePlayer.FindByID(player.id), "accessLost", newLoyalty);
 
             UserGroup newGroup = null;
-            foreach(var group in data.usergroups)
+            foreach (var group in data.usergroups)
             {
-                if(data.players[player.id].loyalty >= group.requirement)
+                if (data.players[player.id].loyalty >= group.requirement)
                 {
                     rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + rust.QuoteSafe(group.usergroup));
                     newGroup = group;
@@ -401,9 +426,33 @@ namespace Oxide.Plugins
             SendMessage(sender, "Top 10 most loyal players");
 
             foreach (var entry in topList)
-               SendMessageFromID(sender, "entryTop", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
+                SendMessageFromID(sender, "entryTop", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
         }
 
+        void rewards(BasePlayer sender)
+        {
+            var rewards = (from entry in data.rewards orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
+            if (rewards.Count() > 0)
+            {
+                SendMessage(sender, "List of next 5 upcoming permission rewards");
+                foreach (var entry in rewards)
+                    SendMessage(sender, "entryRewards", entry.requirement, entry.alias);
+            }
+            else
+                SendMessage(sender, "rewardsNoMoreRewards");
+        }
+        void rewardsg(BasePlayer sender)
+        {
+            var rewards = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
+            if (rewards.Count() > 0)
+            {
+                SendMessage(sender, "List of next 5 upcoming usergroups");
+                foreach (var entry in rewards)
+                    SendMessage(sender, "entryRewards", entry.requirement, entry.usergroup);
+            }
+            else
+                SendMessage(sender, "rewardsNoMoreRewards");
+        }
         string addUserGroup(string usergroup, string requirement)
         {
             if (!Regex.IsMatch(requirement, "^\\d+$"))
@@ -445,13 +494,13 @@ namespace Oxide.Plugins
         {
             rust.SendChatMessage(receiver,
                String.Format(lang.GetMessage("stylingSender", this), Config["serverName"]),
-                String.Format(lang.GetMessage("stylingMessage", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))), 
+                String.Format(lang.GetMessage("stylingMessage", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))),
                 Config["serverIconID"].ToString());
         }
 
         void SendMessageFromID(BasePlayer receiver, string messageID, ulong senderID, params object[] args)
         {
-            rust.SendChatMessage(receiver, 
+            rust.SendChatMessage(receiver,
                 String.Format(lang.GetMessage("stylingSender", this), ""),
                 String.Format(lang.GetMessage("stylingMessage", this), (args.Length > 0 ? String.Format(lang.GetMessage(messageID, this), args) : lang.GetMessage(messageID, this))),
                 Convert.ToString(senderID));
@@ -491,6 +540,8 @@ namespace Oxide.Plugins
                 ["syntaxHelp"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty help</color></color>",
                 ["syntaxLookup"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty lookup {string: playername}</color></color>",
                 ["syntaxTop"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty top</color></color>",
+                ["syntaxRewards"] = "<color=red>Too few or too many arguments.\n Use <color=grey>/loyalty rewards</color></color>",
+                ["syntaxRewards"] = "<color=red>Too few or too many arguments.\n Use <color=grey>/loyalty rewardsg</color></color>",
                 ["syntaxAddGroup"] = "<color=red>Too few or too many arguments. \nUse <color=grey>/loyalty addg {string: group} {int: loyaltyrequirement}</color></color>",
                 ["syntaxNotInt"] = "<color=red>Invalid syntax. Parameter <color=grey>#{0}</color> needs to be a positive integer.</color>",
                 ["rewardExists"] = "<color=red>A reward for the permission <color=grey>{0}</color> already exists.</color>",
@@ -514,11 +565,14 @@ namespace Oxide.Plugins
                 ["entryReward"] = "Alias: {0} Perm: {1} Req: {2}",
                 ["entryTop"] = "{0}. <color=lime>{1}</color> - {2}",
                 ["entryLookup"] = "<color=#6495ED>{0}</color> has accumulated a total of {1} loyalty points.",
+                ["entryRewards"] = "<color=yellow>{0} - {1}</color>",
                 ["groupExists"] = "<color=red>A loyalty reward for the usergroup <color=grey>{0}</color> already exists.</color>",
                 ["groupNoExists"] = "<color=red>No group reward called <color=grey>{0}</color> was found.</color>",
                 ["groupRemoved"] = "Group reward {0} was successfully removed.",
                 ["groupChanged"] = "<color=red>Your loyalty was set to <color=grey>{0}</color> by an admin. Your current group is: <color=grey>{1}</color></color>",
                 ["groupAssigned"] = "Congratulations, by spending <color=yellow>{0} minutes</color> on <color=yellow>{1}</color> you have been assigned the usergroup <color=grey>{2}</color>. Thank you for playing!",
+                ["rewardsMessage"] = "List of next 5 upcoming rewards",
+                ["rewardsNoMoreRewards"] = "There are no more rewards available for you to earn. Check again later!",
                 ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/top/lookup/addg/removeg</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
             }, this);
         }
@@ -535,6 +589,8 @@ namespace Oxide.Plugins
             permission.RegisterPermission("loyalty.help", this);
             permission.RegisterPermission("loyalty.addgroup", this);
             permission.RegisterPermission("loyalty.removegroup", this);
+            permission.RegisterPermission("loyalty.rewards", this);
+            permission.RegisterPermission("loyalty.rewardsg", this);
         }
 
         #endregion Helpers
