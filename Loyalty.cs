@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.1.6")]
+    [Info("Loyalty", "Bamabo", "1.1.7")]
     [Description("Reward your players for play time with new permissions/usergroups")]
 
     class Loyalty : RustPlugin
@@ -336,18 +336,21 @@ namespace Oxide.Plugins
         #endregion Main
 
         #region Subcommands
-        string add(string alias, string permission, string timereq)
+        string add(string alias, string perm, string timereq)
         {
             if (!Regex.IsMatch(timereq, "^\\d+$"))
                 return FormatMessage("syntaxNotInt", 3);
 
-            if (RewardExists(rust.QuoteSafe(permission)))
-                return FormatMessage("rewardExists", permission);
+            if (RewardExists(rust.QuoteSafe(perm)))
+                return FormatMessage("rewardExists", perm);
 
-            data.rewards.Add(new LoyaltyReward(rust.QuoteSafe(alias), rust.QuoteSafe(permission), Convert.ToUInt32(timereq, 10)));
+            if (!permission.PermissionExists(perm))
+                return FormatMessage("unregisteredPerm", perm);
+
+            data.rewards.Add(new LoyaltyReward(rust.QuoteSafe(alias), rust.QuoteSafe(perm), Convert.ToUInt32(timereq, 10)));
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
 
-            return FormatMessage("successAdd", alias, permission, Convert.ToUInt32(timereq, 10));
+            return FormatMessage("successAdd", alias, perm, Convert.ToUInt32(timereq, 10));
         }
 
         string remove(string permission)
@@ -472,6 +475,9 @@ namespace Oxide.Plugins
             if (UserGroupExists(rust.QuoteSafe(usergroup)))
                 return FormatMessage("groupExists", usergroup);
 
+            if (!permission.GroupExists(usergroup))
+                return FormatMessage("unregisteredGroup", usergroup);
+
             data.usergroups.Add(new UserGroup(rust.QuoteSafe(usergroup), Convert.ToUInt32(requirement, 10)));
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
 
@@ -568,7 +574,7 @@ namespace Oxide.Plugins
                 ["errorPlayerNotFound"] = "<color=red>No player by the name {0} was found.</color>",
                 ["errorFatal"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
                 ["stylingMessage"] = "{0}",
-                ["stylingSender"] = "<color=lime>{0}</color>",  
+                ["stylingSender"] = "<color=lime>{0}</color>",
                 ["successSet"] = "Player {0}'s loyalty points were successfully set to {1}.",
                 ["successReset"] = "Player {0}'s loyalty points were successfully reset.",
                 ["successAdd"] = "Successfully added: {0} {1} {2}",
@@ -584,6 +590,8 @@ namespace Oxide.Plugins
                 ["groupAssigned"] = "Congratulations, by spending <color=yellow>{0} minutes</color> on <color=yellow>{1}</color> you have been assigned the usergroup <color=grey>{2}</color>. Thank you for playing!",
                 ["rewardsMessage"] = "List of next 5 upcoming rewards",
                 ["rewardsNoMoreRewards"] = "There are no more rewards available for you to earn. Check again later!",
+                ["unregisteredPerm"] = "<color=red>No permission {0} is registered by oxide. Make sure the plugin you are trying to add permissions for is loaded.</color>",
+                ["unregisteredGroup"] = "<color=red>No usergroup {0} is registered by oxide.</color>",
                 ["help"] = "<color=yellow>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color=grey>/loyalty add/remove/set/reset/top/lookup/addg/removeg</color>\n More info and source on <color=grey>github.com/Hazzty/Loyalty</color>",
             }, this);
         }
