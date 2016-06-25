@@ -113,11 +113,11 @@ namespace Oxide.Plugins
                             foreach (var usergroup in data.usergroups)
                                 if (data.players[player.userID].loyalty == usergroup.requirement)
                                 {
-                                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(usergroup.usergroup));
+                                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
                                     SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
                                 }
                                 else if (data.players[player.userID].loyalty <= usergroup.requirement)
-                                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + rust.QuoteSafe(usergroup.usergroup));
+                                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
                         }
                     }
                     Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
@@ -396,11 +396,15 @@ namespace Oxide.Plugins
             {
                 if (data.players[player.id].loyalty >= group.requirement)
                 {
-                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + rust.QuoteSafe(group.usergroup));
+                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + group.usergroup);
                     newGroup = group;
+                    Puts("usergroup add " + rust.QuoteSafe(player.name) + " " + group.usergroup);
                 }
                 else
-                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + rust.QuoteSafe(group.usergroup));
+                {
+                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + group.usergroup);
+                    Puts("usergroup remove " + rust.QuoteSafe(player.name) + " " + group.usergroup);
+                }
             }
             if (newGroup != null)
                 SendMessage(BasePlayer.FindByID(player.id), "groupChanged", newLoyalty, newGroup.usergroup);
@@ -557,7 +561,7 @@ namespace Oxide.Plugins
                 ["errorPlayerNotFound"] = "<color=red>No player by the name {0} was found.</color>",
                 ["errorFatal"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
                 ["stylingMessage"] = "{0}",
-                ["stylingSender"] = "<color=lime>{0}</color>",
+                ["stylingSender"] = "<color=lime>{0}</color>",  
                 ["successSet"] = "Player {0}'s loyalty points were successfully set to {1}.",
                 ["successReset"] = "Player {0}'s loyalty points were successfully reset.",
                 ["successAdd"] = "Successfully added: {0} {1} {2}",
