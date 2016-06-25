@@ -398,13 +398,10 @@ namespace Oxide.Plugins
                 {
                     rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + group.usergroup);
                     newGroup = group;
-                    Puts("usergroup add " + rust.QuoteSafe(player.name) + " " + group.usergroup);
                 }
                 else
-                {
                     rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + group.usergroup);
-                    Puts("usergroup remove " + rust.QuoteSafe(player.name) + " " + group.usergroup);
-                }
+
             }
             if (newGroup != null)
                 SendMessage(BasePlayer.FindByID(player.id), "groupChanged", newLoyalty, newGroup.usergroup);
