@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.2.0")]
+    [Info("Loyalty", "Bamabo", "1.2.2")]
     [Description("Reward your players for play time with new permissions/usergroups")]
 
     class Loyalty : RustPlugin
@@ -139,21 +139,6 @@ namespace Oxide.Plugins
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
         }
 
-        protected override void LoadDefaultConfig()
-        {
-            PrintWarning("Creating a new configuration file for Loyalty");
-            Config.Clear();
-            Config["allowAdmin"] = true;
-            Config["colorError"] = "red";
-            Config["colorHighlight"] = "yellow";
-            Config["colorText"] = "white";
-            Config["debug"] = false;
-            Config["rate"] = 60.0;
-            Config["serverName"] = "DefaultServer";
-            Config["serverIconID"] = "00000000000000000";
-            SaveConfig();
-        }
-
         void OnPlayerInit(BasePlayer player)
         {
 
@@ -168,7 +153,22 @@ namespace Oxide.Plugins
                     Puts("Player: " + player.displayName + " connected for the first time and got added into data.");
             } 
         }
+
         #endregion Hooks
+        protected override void LoadDefaultConfig()
+        {
+            PrintWarning("Creating a new configuration file for Loyalty");
+            Config.Clear();
+            Config["allowAdmin"] = true;
+            Config["colorError"] = "red";
+            Config["colorHighlight"] = "yellow";
+            Config["colorText"] = "white";
+            Config["debug"] = false;
+            Config["rate"] = 60.0;
+            Config["serverName"] = "DefaultServer";
+            Config["serverIconID"] = "76561198314979344";
+            SaveConfig();
+        }
 
         #region Main
         [ChatCommand("loyalty")]
@@ -443,14 +443,12 @@ namespace Oxide.Plugins
 
             if(!String.IsNullOrEmpty(player.group) && player.group != "")
             {
-                Puts("remove: " + player.group);
-                rust.RunServerCommand("usergroup remove " + player.name + " " + player.group);
+                rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + player.group);
             }
             var newGroup = (from entry in data.usergroups where entry.requirement <= newLoy orderby entry.requirement descending select entry).FirstOrDefault();
             if (newGroup != null)
             {
-                Puts("add " + newGroup.usergroup);
-                rust.RunServerCommand("usergroup add " + player.name + " " + newGroup.usergroup);
+                rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + newGroup.usergroup);
                 data.players[player.id].group = newGroup.usergroup;
             }
 
@@ -504,11 +502,11 @@ namespace Oxide.Plugins
             else
                 SendMessage(sender, "rewardsNoMoreRewards");
         }
-        void addUserGroup(BasePlayer sender, string usergroup, string requirement)
+        void addUserGroup(BasePlayer sender, string requirement, string usergroup)
         {
             if (!Regex.IsMatch(requirement, "^\\d+$"))
             {
-                SendErrorMessage(sender, "syntaxNotInt", 2);
+                SendErrorMessage(sender, "syntaxNotInt", 1);
                 return;
             }
 
@@ -654,7 +652,7 @@ namespace Oxide.Plugins
                 ["stylingSender"] = "<color=lime>{0}</color>",
                 ["successSet"] = "Player <color={0}>{1}'s</color> loyalty points were successfully set to <color={0}>{2}</color>.",
                 ["successReset"] = "Player <color={0}>{1}'s</color> loyalty points were successfully reset.",
-                ["successAdd"] = "Permission reward: <color={0}>[loyalty: {1}, perm: {2}, alias: {3}]</color> successfully added.",
+                ["successAdd"] = "Permission reward: <color={0}>[req: {1}, perm: {2}, alias: {3}]</color> successfully added.",
                 ["successAddGroup"] = "Usergroup reward: <color={0}>[req: {1}, usergroup: {2}]</color> successfully added.",
                 ["topMessage"] = "Top <color={0}>{1}</color> most loyal players out of the total <color={0}>{1}</color>",
                 ["entryReward"] = "Req: {1} Perm: {2} Alias: {3}",
