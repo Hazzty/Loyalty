@@ -189,9 +189,9 @@ namespace Oxide.Plugins
             SaveConfig();
         }
 
-        #region Main
+        #region MainCommand
         [ChatCommand("loyalty")]
-        void loyalty(BasePlayer sender, string command, string[] args)
+        void CmdLoyalty(BasePlayer sender, string command, string[] args)
         {
             if (args.Length == 0)
                 if (permission.UserHasPermission(sender.UserIDString, "loyalty.loyalty") || sender.IsAdmin())
@@ -223,7 +223,7 @@ namespace Oxide.Plugins
                         string alias = "";
                         for (int i = 3; i < args.Length; i++)
                             alias += args[i] + " ";
-                        add(sender, args[1], args[2], alias);
+                        CmdAdd(sender, args[1], args[2], alias);
                         break;
 
                     case "remove":
@@ -237,7 +237,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxRemove");
                             return;
                         }
-                        remove(sender, args[1]);
+                        CmdRemove(sender, args[1]);
                         break;
                     case "removeg":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.removegroup") && !sender.IsAdmin())
@@ -250,7 +250,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxRemoveGroup");
                             return;
                         }
-                        removeUserGroup(sender, args[1]);
+                        CmdRemoveUserGroup(sender, args[1]);
                         break;
                     case "reset":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.reset") && !sender.IsAdmin())
@@ -263,7 +263,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxReset");
                             return;
                         }
-                        reset(sender, args[1]);
+                        CmdReset(sender, args[1]);
                         break;
 
                     case "set":
@@ -277,7 +277,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxSet");
                             return;
                         }
-                        set(sender, args[1], args[2]);
+                        CmdSet(sender, args[1], args[2]);
                         break;
                     case "help":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.help") && !sender.IsAdmin())
@@ -304,10 +304,10 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxLookup");
                             return;
                         }
-                        lookup(sender, args[1]);
+                        CmdLookup(sender, args[1]);
                         break;
 
-                    case "top":
+                    case "Top":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.top") && !sender.IsAdmin())
                         {
                             SendErrorMessage(sender, "accessDenied");
@@ -318,7 +318,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxTop");
                             return;
                         }
-                        top(sender);
+                        CmdTop(sender);
                         break;
                     case "addg":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.addgroup") && !sender.IsAdmin())
@@ -331,7 +331,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxAddGroup");
                             return;
                         }
-                        addUserGroup(sender, args[1], args[2]);
+                        CmdAddUserGroup(sender, args[1], args[2]);
                         break;
                     case "rewards":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewards") && !sender.IsAdmin())
@@ -344,7 +344,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxRewards");
                             return;
                         }
-                        rewards(sender);
+                        CmdRewards(sender);
                         break;
                     case "rewardsg":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.rewardsg") && !sender.IsAdmin())
@@ -357,7 +357,7 @@ namespace Oxide.Plugins
                             SendErrorMessage(sender, "syntaxRewardsg");
                             return;
                         }
-                        rewardsg(sender);
+                        CmdRewardsg(sender);
                         break;
                     default:
                         SendErrorMessage(sender, "errorNoCommand", args[0]);
@@ -365,11 +365,11 @@ namespace Oxide.Plugins
                 };
             }
         }
-        #endregion Main
+        #endregion MainCommand
 
         #region Subcommands
 
-        void add(BasePlayer sender, string req, string perm, string alias)
+        void CmdAdd(BasePlayer sender, string req, string perm, string alias)
         {
             if (!Regex.IsMatch(req, "^\\d+$"))
             {
@@ -394,7 +394,7 @@ namespace Oxide.Plugins
 
             SendMessage(sender, "successAdd", Convert.ToUInt32(req, 10), perm, alias);
         }
-        void remove(BasePlayer sender, string permission)
+        void CmdRemove(BasePlayer sender, string permission)
         {
             if (!RewardExists(rust.QuoteSafe(permission)))
             {
@@ -411,7 +411,7 @@ namespace Oxide.Plugins
                 }
         }
 
-        void reset(BasePlayer sender, string playerName)
+        void CmdReset(BasePlayer sender, string playerName)
         {
             Player player = data.players.Values.FirstOrDefault(x => x.name.StartsWith(playerName, StringComparison.CurrentCultureIgnoreCase));
             if (player == null)
@@ -430,7 +430,7 @@ namespace Oxide.Plugins
             SendMessage(BasePlayer.FindByID(player.id), "loyaltyReset");
             SendMessage(sender, "successReset", player.name);
         }
-        void set(BasePlayer sender, string playerName, string newLoyalty)
+        void CmdSet(BasePlayer sender, string playerName, string newLoyalty)
         {
             Player player = data.players.Values.FirstOrDefault(x => x.name.StartsWith(playerName, StringComparison.CurrentCultureIgnoreCase));
 
@@ -489,7 +489,7 @@ namespace Oxide.Plugins
             SendMessage(sender, "successSet", player.name, newLoy);
 
         }
-        void lookup(BasePlayer sender, string player)
+        void CmdLookup(BasePlayer sender, string player)
         {
             Player lookUpPlayer = data.players.Values.FirstOrDefault(x => x.name.StartsWith(player, StringComparison.CurrentCultureIgnoreCase));
             if (lookUpPlayer != null)
@@ -500,7 +500,7 @@ namespace Oxide.Plugins
                 return;
             }
         }
-        void top(BasePlayer sender)
+        void CmdTop(BasePlayer sender)
         {
             var topList = (from entry in data.players orderby entry.Value.loyalty descending select entry).Take(10);
             int counter = 0;
@@ -510,7 +510,7 @@ namespace Oxide.Plugins
                 SendMessageFromID(sender, "entryTop", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
         }
 
-        void rewards(BasePlayer sender)
+        void CmdRewards(BasePlayer sender)
         {
             var rewards = (from entry in data.rewards orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
             if (rewards.Count() > 0)
@@ -522,7 +522,7 @@ namespace Oxide.Plugins
             else
                 SendMessage(sender, "rewardsNoMoreRewards");
         }
-        void rewardsg(BasePlayer sender)
+        void CmdRewardsg(BasePlayer sender)
         {
             var rewards = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
             if (rewards.Count() > 0)
@@ -534,7 +534,7 @@ namespace Oxide.Plugins
             else
                 SendMessage(sender, "rewardsNoMoreRewards");
         }
-        void addUserGroup(BasePlayer sender, string requirement, string usergroup)
+        void CmdAddUserGroup(BasePlayer sender, string requirement, string usergroup)
         {
             if (!Regex.IsMatch(requirement, "^\\d+$"))
             {
@@ -559,7 +559,7 @@ namespace Oxide.Plugins
 
             SendMessage(sender, "successAddGroup", Convert.ToUInt32(requirement, 10), rust.QuoteSafe(usergroup));
         }
-        void removeUserGroup(BasePlayer sender, string usergroup)
+        void CmdRemoveUserGroup(BasePlayer sender, string usergroup)
         {
             if (!UserGroupExists(rust.QuoteSafe(usergroup)))
             {
