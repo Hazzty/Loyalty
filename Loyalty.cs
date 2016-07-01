@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.2.2")]
+    [Info("Loyalty", "Bamabo", "1.2.4")]
     [Description("Reward your players for play time with new permissions/usergroups")]
 
     class Loyalty : RustPlugin
@@ -101,35 +101,54 @@ namespace Oxide.Plugins
                             data.players.Add(player.userID, new Player(player.userID, player.displayName, 1, ""));
                         else
                         {
+                            data.players[player.userID].name = player.displayName;
                             data.players[player.userID].loyalty += 1;
                             foreach (var reward in data.rewards)
+                            {
                                 if (data.players[player.userID].loyalty == reward.requirement)
                                 {
-                                    rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
-                                    SendMessage(player, "accessGranted", reward.requirement, Config["serverName"].ToString(), reward.alias);
-                                    if ((bool)Config["debug"])
-                                        Puts("Player: " + player.displayName + " gained access to " + reward.permission + " by reaching " + reward.requirement + " loyalty points.");
+                                    if (!reward.permission.StartsWith("\"-"))
+                                    {
+                                        rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
+                                        SendMessage(player, "accessGranted", reward.requirement, Config["serverName"].ToString(), reward.alias);
+                                        if ((bool)Config["debug"])
+                                            Puts("Player: " + player.displayName + " gained access to " + reward.permission + " by reaching " + reward.requirement + " loyalty points.");
+                                    }
+                                    else
+                                    {
+                                        rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.displayName) + " " + reward.permission.Replace('-', ' ').Trim());
+                                        SendMessage(player, "accessLostSpecific", reward.requirement, reward.alias);
+                                        if ((bool)Config["debug"])
+                                            Puts("Player: " + player.displayName + " lost access to " + reward.permission + " by reaching " + reward.requirement + " loyalty points.");
+                                    }
+
                                 }
+                            }
                             foreach (var usergroup in data.usergroups)
                             {
                                 if (data.players[player.userID].loyalty == usergroup.requirement)
                                 {
-                                    //Assign new group and remove old one
-                                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
-                                    if(!String.IsNullOrEmpty(data.players[player.userID].group))
-                                        rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + data.players[player.userID].group);
-                                    data.players[player.userID].group = usergroup.usergroup; //Update player's group to new one
+                                    if (!usergroup.usergroup.StartsWith("\"-"))
+                                    {
+                                        rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
+                                        if (!String.IsNullOrEmpty(data.players[player.userID].group))
+                                            rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + data.players[player.userID].group);
 
-                                    SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
-                                    if ((bool)Config["debug"])
-                                        Puts("Player: " + player.displayName + " was assigned " + usergroup.usergroup + " by reaching " + usergroup.requirement + " loyalty points.");
+                                        data.players[player.userID].group = usergroup.usergroup;
+                                        SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
+                                    }
+                                    else
+                                    {
+                                        rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup.Replace('-', ' ').Trim());
+                                    }
+
                                 }
                             }
                         }
                     }
-                    Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
                 }
-                if((bool)Config["debug"])
+                Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
+                if ((bool)Config["debug"])
                     Puts("Assigned every online player 1 loyalty point.");
             });
         }
@@ -151,7 +170,7 @@ namespace Oxide.Plugins
                 }
                 if ((bool)Config["debug"])
                     Puts("Player: " + player.displayName + " connected for the first time and got added into data.");
-            } 
+            }
         }
 
         #endregion Hooks
@@ -181,10 +200,6 @@ namespace Oxide.Plugins
                         SendMessage(sender, "loyaltyCurrent", data.players[sender.userID].loyalty, Config["serverName"]);
                     else
                         SendErrorMessage(sender, "errorNoLoyalty");
-
-                    if ((bool)Config["debug"])
-                        Puts("Player: " + sender.displayName + " checked loyaltyCurrent returned" + data.players[sender.userID].loyalty);
-
                     return;
                 }
                 else
@@ -368,9 +383,9 @@ namespace Oxide.Plugins
                 return;
             }
 
-            if (!permission.PermissionExists(perm))
+            if (!permission.PermissionExists(perm.Trim('-')))
             {
-                SendErrorMessage(sender, "unregisteredPerm", perm);
+                SendErrorMessage(sender, "unregisteredPerm", perm.Replace('-', ' ').Trim());
                 return;
             }
 
@@ -407,9 +422,9 @@ namespace Oxide.Plugins
 
             data.players[player.id].loyalty = 0;
             foreach (var reward in data.rewards)
-                rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission);
+                rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
             foreach (var group in data.usergroups)
-                rust.RunServerCommand("usergroup remove " + player.name + " " + group.usergroup);
+                rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + group.usergroup.Replace('-', ' ').Trim());
             player.group = "";
 
             SendMessage(BasePlayer.FindByID(player.id), "loyaltyReset");
@@ -434,22 +449,39 @@ namespace Oxide.Plugins
 
             foreach (var reward in data.rewards)
             {
-                if ( newLoy >= reward.requirement)
-                    rust.RunServerCommand("grant user " + rust.QuoteSafe(player.name) + " " + reward.permission);
+                if (newLoy >= reward.requirement)
+                {
+                    if (reward.permission.StartsWith("\"-"))
+                        rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
+                    else
+                        rust.RunServerCommand("grant user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
+
+                }
                 else
-                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission);
+                {
+                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
+                }
             }
             SendMessage(BasePlayer.FindByID(player.id), "accessLost", newLoyalty);
 
-            if(!String.IsNullOrEmpty(player.group) && player.group != "")
+            if (!String.IsNullOrEmpty(player.group) && player.group.Equals("") && player.group.Equals(" "))
             {
                 rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + player.group);
             }
             var newGroup = (from entry in data.usergroups where entry.requirement <= newLoy orderby entry.requirement descending select entry).FirstOrDefault();
             if (newGroup != null)
             {
-                rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + newGroup.usergroup);
-                data.players[player.id].group = newGroup.usergroup;
+                if (newGroup.usergroup.Trim().StartsWith("\"-"))
+                {
+                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + newGroup.usergroup.Replace('-', ' ').Trim());
+                    if (newGroup.usergroup.TrimStart('-') == data.players[player.id].group)
+                        data.players[player.id].group = "";
+                }
+                else
+                {
+                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + newGroup.usergroup.Replace('-', ' ').Trim());
+                    data.players[player.id].group = newGroup.usergroup;
+                }
             }
 
 
@@ -477,7 +509,7 @@ namespace Oxide.Plugins
             foreach (var entry in topList)
                 SendMessageFromID(sender, "entryTop", entry.Value.id, ++counter, entry.Value.name, entry.Value.loyalty);
         }
-   
+
         void rewards(BasePlayer sender)
         {
             var rewards = (from entry in data.rewards orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
@@ -495,7 +527,7 @@ namespace Oxide.Plugins
             var rewards = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
             if (rewards.Count() > 0)
             {
-                SendMessage(sender, "rewardsgMessage" , rewards.Count());
+                SendMessage(sender, "rewardsgMessage", rewards.Count());
                 foreach (var entry in rewards)
                     SendMessage(sender, "entryRewards", entry.requirement, entry.usergroup);
             }
@@ -516,9 +548,9 @@ namespace Oxide.Plugins
                 return;
             }
 
-            if (!permission.GroupExists(usergroup))
+            if (!permission.GroupExists(usergroup.TrimStart('-')))
             {
-                SendErrorMessage(sender, "unregisteredGroup", usergroup);
+                SendErrorMessage(sender, "unregisteredGroup", usergroup.Replace('-', ' ').Trim());
                 return;
             }
 
