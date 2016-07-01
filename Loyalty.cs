@@ -562,7 +562,7 @@ namespace Oxide.Plugins
             {
                 message = String.Format(lang.GetMessage(messageID, this), Config["colorHighlight"].ToString());
             }
-            rust.SendChatMessage(receiver, "", "<color=" + Config["colorText"] + ">" + message + "</color>", Config["serverIconID"].ToString());
+            rust.SendChatMessage(receiver, "<color=" + Config["colorText"] + ">" + message + "</color>", null, Config["serverIconID"].ToString());
         }
         void SendErrorMessage(BasePlayer receiver, string messageID, params object[] args)
         {
@@ -571,15 +571,15 @@ namespace Oxide.Plugins
             {
                 object[] arr = new object[args.Length + 1];
                 arr[0] = Config["colorHighlight"].ToString();
-                for (int i = 1; i < args.Length+1; i++)
-                    arr[i] = args[i-1];
+                for (int i = 1; i < args.Length + 1; i++)
+                    arr[i] = args[i - 1];
                 message = String.Format(lang.GetMessage(messageID, this), arr);
             }
             else
             {
                 message = String.Format(lang.GetMessage(messageID, this), Config["colorHighlight"].ToString());
             }
-            rust.SendChatMessage(receiver, "", "<color=" + Config["colorError"] + ">" + message + "</color>", Config["serverIconID"].ToString());
+            rust.SendChatMessage(receiver, "<color=" + Config["colorError"] + ">" + message + "</color>", null, Config["serverIconID"].ToString());
         }
         void SendMessageFromID(BasePlayer receiver, string messageID, ulong senderID, params object[] args)
         {
@@ -596,7 +596,7 @@ namespace Oxide.Plugins
             {
                 message = String.Format(lang.GetMessage(messageID, this), Config["colorHighlight"].ToString());
             }
-            rust.SendChatMessage(receiver, "", "<color=" + Config["colorText"] + ">" + message + "</color>", senderID.ToString());
+            rust.SendChatMessage(receiver, "<color=" + Config["colorText"] + ">" + message + "</color>", null, senderID.ToString());
         }
         string FormatMessage(string messageID, params object[] args)
         {
@@ -648,6 +648,7 @@ namespace Oxide.Plugins
                 ["errorNoLoyalty"] = "You have not yet earned any loyalty points. Check again in a minute!",
                 ["errorNoCommand"] = "No command <color={0}>{1}</color> was found.",
                 ["errorPlayerNotFound"] = "No player by the name <color={0}>{1}</color> was found.",
+                ["errorNoPlusMinus"] = "Your usergroup needs to start with <color={0}>'+'</color> or <color={0}>'-'</color>.",
                 ["errorFatal"] = "FATAL ERROR. If you see this something has gone terribly wrong.",
                 ["stylingMessage"] = "{0}",
                 ["stylingSender"] = "<color=lime>{0}</color>",
@@ -674,7 +675,6 @@ namespace Oxide.Plugins
                 ["help"] = "<color={0}>Loyalty by Bamabo</color>\nLoyalty is a plugin that lets server owners reward their players with permissions according to how much time they've spent on the server. 1 Loyalty = 1 minute. \n<color={0}>/loyalty add/remove/set/reset/top/lookup/addg/removeg</color>\n More info and source on <color={0}>github.com/Hazzty/Loyalty</color>",
             }, this);
         }
-
         void RegisterPermissions()
         {
             permission.RegisterPermission("loyalty.loyalty", this);
