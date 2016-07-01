@@ -654,7 +654,7 @@ namespace Oxide.Plugins
                 ["successReset"] = "Player <color={0}>{1}'s</color> loyalty points were successfully reset.",
                 ["successAdd"] = "Permission reward: <color={0}>[req: {1}, perm: {2}, alias: {3}]</color> successfully added.",
                 ["successAddGroup"] = "Usergroup reward: <color={0}>[req: {1}, usergroup: {2}]</color> successfully added.",
-                ["topMessage"] = "Top <color={0}>{1}</color> most loyal players out of the total <color={0}>{1}</color>",
+                ["topMessage"] = "Top <color={0}>{1}</color> most loyal players out of the total <color={0}>{2}</color>",
                 ["entryReward"] = "Req: {1} Perm: {2} Alias: {3}",
                 ["entryTop"] = "{1}. <color={0}>{2}</color> - {3}",
                 ["entryLookup"] = "<color={0}>{1}</color> has accumulated a total of <color={0}>{2}</color> loyalty points.",
