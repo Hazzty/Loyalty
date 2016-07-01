@@ -162,10 +162,10 @@ namespace Oxide.Plugins
             Config["allowAdmin"] = true;
             Config["colorError"] = "red";
             Config["colorHighlight"] = "yellow";
-            Config["colorText"] = "white";
+            Config["colorText"] = "#FFFFFF";
             Config["debug"] = false;
             Config["rate"] = 60.0;
-            Config["serverName"] = "DefaultServer";
+            Config["serverName"] = "Default Server";
             Config["serverIconID"] = "76561198314979344";
             SaveConfig();
         }
