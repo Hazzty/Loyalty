@@ -6,11 +6,12 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.3.0")]
+    [Info("Loyalty", "Bamabo", "1.3.1")]
     [Description("Reward your players for play time with new permissions/usergroups")]
 
     class Loyalty : RustPlugin
     {
+        Data data;
 
         #region Classes
         class Data
@@ -78,8 +79,6 @@ namespace Oxide.Plugins
             }
         }
         #endregion Classes
-
-        private Data data;
 
         #region Hooks
         void Init()
@@ -174,20 +173,6 @@ namespace Oxide.Plugins
         }
 
         #endregion Hooks
-        protected override void LoadDefaultConfig()
-        {
-            PrintWarning("Creating a new configuration file for Loyalty");
-            Config.Clear();
-            Config["allowAdmin"] = true;
-            Config["colorError"] = "red";
-            Config["colorHighlight"] = "yellow";
-            Config["colorText"] = "#FFFFFF";
-            Config["debug"] = false;
-            Config["rate"] = 60.0;
-            Config["serverName"] = "Default Server";
-            Config["serverIconID"] = "76561198314979344";
-            SaveConfig();
-        }
 
         #region MainCommand
         [ChatCommand("loyalty")]
@@ -307,7 +292,7 @@ namespace Oxide.Plugins
                         CmdLookup(sender, args[1]);
                         break;
 
-                    case "Top":
+                    case "top":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.top") && !sender.IsAdmin())
                         {
                             SendErrorMessage(sender, "accessDenied");
@@ -724,6 +709,24 @@ namespace Oxide.Plugins
         }
 
         #endregion Helpers
+
+        #region Config
+        protected override void LoadDefaultConfig()
+        {
+            PrintWarning("Creating a new configuration file for Loyalty");
+            Config.Clear();
+            Config["allowAdmin"] = true;
+            Config["colorError"] = "red";
+            Config["colorHighlight"] = "yellow";
+            Config["colorText"] = "#FFFFFF";
+            Config["debug"] = false;
+            Config["rate"] = 60.0;
+            Config["serverName"] = "Default Server";
+            Config["serverIconID"] = "76561198314979344";
+            SaveConfig();
+        }
+        #endregion Config
+
     }
 
 }
