@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Oxide.Plugins
 {
-    [Info("Loyalty", "Bamabo", "1.3.1")]
+    [Info("Loyalty", "Bamabo", "1.4.0")]
     [Description("Reward your players for play time with new permissions/usergroups")]
 
     class Loyalty : RustPlugin
@@ -17,67 +17,122 @@ namespace Oxide.Plugins
         class Data
         {
             public Dictionary<ulong, Player> players = new Dictionary<ulong, Player>();
-            public HashSet<UserGroup> usergroups = new HashSet<UserGroup>();
-            public HashSet<LoyaltyReward> rewards = new HashSet<LoyaltyReward>();
+            public HashSet<Reward> rewards = new HashSet<Reward>();
 
             public Data() { }
         }
 
-        public class LoyaltyReward
-        {
-            public string alias { get; set; }
-            public string permission { get; set; }
-            public uint requirement { get; set; }
-
-            public LoyaltyReward() { alias = null; permission = null; requirement = 0; }
-
-            public LoyaltyReward(string alias, string permission, uint requirement = 0)
-            {
-                this.alias = alias;
-                this.permission = permission;
-                this.requirement = requirement;
-            }
-        }
+        
         public class Player
         {
             public string name { get; set; }
             public ulong id { get; set; }
-            public uint loyalty { get; set; }
+            public ulong loyalty { get; set; }
             public string group { get; set; }
 
             public Player() { }
 
-            public Player(ulong id, string name, uint loyalty = 0, string group = "")
+            public Player(ulong id, string name, ulong loyalty = 0, string group = "")
             {
                 this.id = id;
                 this.name = name;
-                this.loyalty = loyalty;
+                this.loyalty = loyalty; 
                 this.group = group;
             }
+
             public override bool Equals(object obj)
             {
                 Player pItem = obj as Player;
                 return pItem.GetHashCode() == this.GetHashCode();
             }
-
             public override int GetHashCode()
             {
-                return (int)this.id;
+                return (int)id;
             }
 
         }
-        public class UserGroup
-        {
-            public string usergroup { get; set; }
-            public uint requirement { get; set; }
 
-            public UserGroup() { usergroup = ""; requirement = 0; }
-            public UserGroup(string usergroup, uint requirement = 0)
+        public class Reward
+        {
+            public string reward { get; set; }
+            public ulong requirement { get; set; }
+
+            public Reward() { }
+
+            public Reward(uint requirement, string reward)
             {
-                this.usergroup = usergroup;
+                this.reward = reward;
                 this.requirement = requirement;
             }
+            public virtual string AsString() { return "Requirement: " + requirement + " Reward: " + reward; }
+            public virtual void Grant(string player) { }
+            public virtual void Revoke(string player) { }
+
         }
+
+        public class PermissionReward : Reward
+        {
+            public string alias { get; set; }
+            public PermissionReward() { }
+            public PermissionReward(ulong requirement, string reward, string alias)
+            {
+                this.requirement = requirement;
+                this.reward = reward;
+                this.alias = alias;
+            }
+
+            public override string AsString() { return "Requirement: " + requirement + " Permission: " + reward + " Alias: " + alias;}
+            public override void Grant(string player)
+            {
+                base.Grant(player);
+            }
+            public override void Revoke(string player)
+            {
+                base.Revoke(player);
+            }
+        }
+
+        public class UserGroupReward : Reward
+        {
+            public UserGroupReward() {}
+            public UserGroupReward(ulong requirement, string reward)
+            {
+                this.reward = reward;
+                this.requirement = requirement;
+            }
+
+            public override string AsString() { return "Requirement: " + requirement + " Usergroup: " + reward; }
+            public override void Grant(string player)
+            {
+                base.Grant(player);
+            }
+            public override void Revoke(string player)
+            {
+                base.Revoke(player);
+            }
+        }
+        public class ItemReward : Reward
+        {
+            public uint amount { get; set; }
+            public ItemReward() {}
+            public ItemReward(ulong requirement, string reward, uint amount = 1)
+            {
+                this.reward = reward;
+                this.amount = amount;
+                this.requirement = requirement;
+            }
+
+            public override string AsString() { return "Requirement: " + requirement + " Item: " + reward + " Amount: " + amount; }
+            public override void Grant(string player)
+            {
+                base.Grant(player);
+            }
+            public override void Revoke(string player)
+            {
+                base.Revoke(player);
+            }
+        }
+
         #endregion Classes
 
         #region Hooks
@@ -106,41 +161,16 @@ namespace Oxide.Plugins
                             {
                                 if (data.players[player.userID].loyalty == reward.requirement)
                                 {
-                                    if (!reward.permission.StartsWith("\"-"))
+                                    if (reward.reward.StartsWith("\"-")) //starts with a quotesafed '-'
                                     {
-                                        rust.RunServerCommand("grant user " + rust.QuoteSafe(player.displayName) + " " + reward.permission);
-                                        SendMessage(player, "accessGranted", reward.requirement, Config["serverName"].ToString(), reward.alias);
-                                        if ((bool)Config["debug"])
-                                            Puts("Player: " + player.displayName + " gained access to " + reward.permission + " by reaching " + reward.requirement + " loyalty points.");
+                                        reward.Revoke(player.displayName);
+                                        
                                     }
                                     else
                                     {
-                                        rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.displayName) + " " + reward.permission.Replace('-', ' ').Trim());
-                                        SendMessage(player, "accessLostSpecific", reward.requirement, reward.alias);
-                                        if ((bool)Config["debug"])
-                                            Puts("Player: " + player.displayName + " lost access to " + reward.permission + " by reaching " + reward.requirement + " loyalty points.");
-                                    }
+                                        reward.Grant(player.displayName);
 
-                                }
-                            }
-                            foreach (var usergroup in data.usergroups)
-                            {
-                                if (data.players[player.userID].loyalty == usergroup.requirement)
-                                {
-                                    if (!usergroup.usergroup.StartsWith("\"-"))
-                                    {
-                                        rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup);
-                                        if (!String.IsNullOrEmpty(data.players[player.userID].group))
-                                            rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + data.players[player.userID].group);
-
-                                        data.players[player.userID].group = usergroup.usergroup;
-                                        SendMessage(player, "groupAssigned", usergroup.requirement, Config["serverName"].ToString(), usergroup.usergroup);
                                     }
-                                    else
-                                    {
-                                        rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.displayName) + " " + usergroup.usergroup.Replace('-', ' ').Trim());
-                                    }
-
                                 }
                             }
                         }
@@ -223,19 +253,6 @@ namespace Oxide.Plugins
                             return;
                         }
                         CmdRemove(sender, args[1]);
-                        break;
-                    case "removeg":
-                        if (!permission.UserHasPermission(sender.UserIDString, "loyalty.removegroup") && !sender.IsAdmin())
-                        {
-                            SendErrorMessage(sender, "accessDenied");
-                            return;
-                        }
-                        if (args.Length != 2)
-                        {
-                            SendErrorMessage(sender, "syntaxRemoveGroup");
-                            return;
-                        }
-                        CmdRemoveUserGroup(sender, args[1]);
                         break;
                     case "reset":
                         if (!permission.UserHasPermission(sender.UserIDString, "loyalty.reset") && !sender.IsAdmin())
@@ -374,7 +391,7 @@ namespace Oxide.Plugins
                 return;
             }
 
-            data.rewards.Add(new LoyaltyReward(rust.QuoteSafe(alias), rust.QuoteSafe(perm), Convert.ToUInt32(req, 10)));
+            data.rewards.Add(new PermissionReward(Convert.ToUInt32(req, 10), rust.QuoteSafe(perm), rust.QuoteSafe(alias)));
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
 
             SendMessage(sender, "successAdd", Convert.ToUInt32(req, 10), perm, alias);
@@ -386,8 +403,8 @@ namespace Oxide.Plugins
                 SendErrorMessage(sender, "rewardNoExist", permission);
                 return;
             }
-            foreach (LoyaltyReward reward in data.rewards)
-                if (reward.permission == rust.QuoteSafe(permission))
+            foreach (Reward reward in data.rewards)
+                if (reward.reward == rust.QuoteSafe(permission))
                 {
                     data.rewards.Remove(reward);
                     Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
@@ -406,11 +423,9 @@ namespace Oxide.Plugins
             }
 
             data.players[player.id].loyalty = 0;
-            foreach (var reward in data.rewards)
-                rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
-            foreach (var group in data.usergroups)
-                rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + group.usergroup.Replace('-', ' ').Trim());
-            player.group = "";
+
+            foreach(var reward in data.rewards)
+                reward.Revoke(player.name);
 
             SendMessage(BasePlayer.FindByID(player.id), "loyaltyReset");
             SendMessage(sender, "successReset", player.name);
@@ -436,15 +451,15 @@ namespace Oxide.Plugins
             {
                 if (newLoy >= reward.requirement)
                 {
-                    if (reward.permission.StartsWith("\"-"))
-                        rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
+                    if (reward.reward.StartsWith("\"-"))
+                        rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.reward.Replace('-', ' ').Trim());
                     else
-                        rust.RunServerCommand("grant user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
+                        rust.RunServerCommand("grant user " + rust.QuoteSafe(player.name) + " " + reward.reward.Replace('-', ' ').Trim());
 
                 }
                 else
                 {
-                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.permission.Replace('-', ' ').Trim());
+                    rust.RunServerCommand("revoke user " + rust.QuoteSafe(player.name) + " " + reward.reward.Replace('-', ' ').Trim());
                 }
             }
             SendMessage(BasePlayer.FindByID(player.id), "accessLost", newLoyalty);
@@ -453,19 +468,19 @@ namespace Oxide.Plugins
             {
                 rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + player.group);
             }
-            var newGroup = (from entry in data.usergroups where entry.requirement <= newLoy orderby entry.requirement descending select entry).FirstOrDefault();
+            var newGroup = (from entry in data.rewards where entry.requirement <= newLoy orderby entry.requirement descending select entry).FirstOrDefault();
             if (newGroup != null)
             {
-                if (newGroup.usergroup.Trim().StartsWith("\"-"))
+                if (newGroup.reward.Trim().StartsWith("\"-"))
                 {
-                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + newGroup.usergroup.Replace('-', ' ').Trim());
-                    if (newGroup.usergroup.TrimStart('-') == data.players[player.id].group)
+                    rust.RunServerCommand("usergroup remove " + rust.QuoteSafe(player.name) + " " + newGroup.reward.Replace('-', ' ').Trim());
+                    if (newGroup.reward.TrimStart('-') == data.players[player.id].group)
                         data.players[player.id].group = "";
                 }
                 else
                 {
-                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + newGroup.usergroup.Replace('-', ' ').Trim());
-                    data.players[player.id].group = newGroup.usergroup;
+                    rust.RunServerCommand("usergroup add " + rust.QuoteSafe(player.name) + " " + newGroup.reward.Replace('-', ' ').Trim());
+                    data.players[player.id].group = newGroup.reward;
                 }
             }
 
@@ -502,19 +517,19 @@ namespace Oxide.Plugins
             {
                 SendMessage(sender, "rewardsMessage", rewards.Count());
                 foreach (var entry in rewards)
-                    SendMessage(sender, "entryRewards", entry.requirement, entry.alias);
+                    SendMessage(sender, entry.AsString());
             }
             else
                 SendMessage(sender, "rewardsNoMoreRewards");
         }
         void CmdRewardsg(BasePlayer sender)
         {
-            var rewards = (from entry in data.usergroups orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
+            var rewards = (from entry in data.rewards orderby entry.requirement ascending where entry.requirement > data.players[sender.userID].loyalty select entry).Take(5);
             if (rewards.Count() > 0)
             {
                 SendMessage(sender, "rewardsgMessage", rewards.Count());
                 foreach (var entry in rewards)
-                    SendMessage(sender, "entryRewards", entry.requirement, entry.usergroup);
+                    SendMessage(sender, "entryRewards", entry.requirement, entry.reward);
             }
             else
                 SendMessage(sender, "rewardsNoMoreRewards");
@@ -539,26 +554,10 @@ namespace Oxide.Plugins
                 return;
             }
 
-            data.usergroups.Add(new UserGroup(rust.QuoteSafe(usergroup), Convert.ToUInt32(requirement, 10)));
+            data.rewards.Add(new UserGroupReward(Convert.ToUInt32(requirement, 10), rust.QuoteSafe(usergroup)));
             Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
 
             SendMessage(sender, "successAddGroup", Convert.ToUInt32(requirement, 10), rust.QuoteSafe(usergroup));
-        }
-        void CmdRemoveUserGroup(BasePlayer sender, string usergroup)
-        {
-            if (!UserGroupExists(rust.QuoteSafe(usergroup)))
-            {
-                SendErrorMessage(sender, "groupNoExists", usergroup);
-                return;
-            }
-            foreach (UserGroup usergroupEntry in data.usergroups)
-                if (usergroupEntry.usergroup == rust.QuoteSafe(usergroup))
-                {
-                    data.usergroups.Remove(usergroupEntry);
-                    Interface.Oxide.DataFileSystem.WriteObject("LoyaltyData", data);
-                    SendMessage(sender, "groupRemoved", usergroup);
-                    return;
-                }
         }
 
         #endregion Subcommands
@@ -620,18 +619,18 @@ namespace Oxide.Plugins
             return String.Format(lang.GetMessage(messageID, this), args);
         }
 
-        bool RewardExists(string permission)
+        bool RewardExists(string reward)
         {
-            foreach (LoyaltyReward reward in data.rewards)
-                if (reward.permission == permission)
+            foreach (Reward rewardEntry in data.rewards)
+                if (rewardEntry.reward == reward)
                     return true;
 
             return false;
         }
         bool UserGroupExists(string usergroup)
         {
-            foreach (UserGroup usergEntry in data.usergroups)
-                if (usergEntry.usergroup == usergroup)
+            foreach (UserGroupReward usergEntry in data.rewards)
+                if (usergEntry.reward == usergroup)
                     return true;
 
             return false;
@@ -703,7 +702,6 @@ namespace Oxide.Plugins
             permission.RegisterPermission("loyalty.top", this);
             permission.RegisterPermission("loyalty.help", this);
             permission.RegisterPermission("loyalty.addgroup", this);
-            permission.RegisterPermission("loyalty.removegroup", this);
             permission.RegisterPermission("loyalty.rewards", this);
             permission.RegisterPermission("loyalty.rewardsg", this);
         }
